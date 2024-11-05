@@ -4,13 +4,16 @@
   "description": "inventory sorting and management system for a small chemist shop",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "nodemon server/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.21.1",
+    "nodemon": "^3.1.7",
     "sqlite3": "^5.1.7"
   }
 }
