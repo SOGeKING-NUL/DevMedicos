@@ -16,6 +16,7 @@ const items="CREATE TABLE IF NOT EXISTS items(\
 
 const inventory="CREATE TABLE IF NOT EXISTS inventory (\
                 id INTEGER PRIMARY KEY AUTOINCREMENT,\
+                created_on DATE NOT NULL DEFAULT CURRENT_DATE,\
                 item TEXT NOT NULL,\
                 rate_per_unit DECIMAL(7,2) NOT NULL CHECK (rate_per_unit >= 0),\
                 mrp_per_unit DECIMAL(7,2) NOT NULL CHECK (mrp_per_unit >= 0),\
@@ -23,16 +24,18 @@ const inventory="CREATE TABLE IF NOT EXISTS inventory (\
                 )"
 
 const shipment= "CREATE TABLE IF NOT EXISTS shipment (\
-                invoice_no TEXT PRIMARY KEY,\
+                id INTEGER PRIMARY KEY AUTOINCREMENT,\
+                invoice_no TEXT NOT NULL,\
                 created_on DATE NOT NULL DEFAULT CURRENT_DATE,\
                 quantity INTEGER NOT NULL CHECK (quantity >= 0),\
                 bonus INTEGER CHECK (bonus >= 0),\
-                pack_unit TEXT CHECK (pack_unit IN ('TAB', 'CAP', 'ML', 'GM')),\
+                pack_of DECIMAL(5,2) NOT NULL CHECK (pack_of >= 0),\
                 item TEXT NOT NULL,\
                 mrp DECIMAL(7,2) NOT NULL CHECK (mrp >= 0) ,\
                 rate DECIMAL(7,2) NOT NULL CHECK (rate >= 0),\
                 amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0),\
-                FOREIGN KEY(item) REFERENCES items (item)\
+                FOREIGN KEY(item) REFERENCES items (item),\
+                UNIQUE(invoice_no, created_on, quantity, bonus, pack_of, item, mrp, rate, amount)\
                 )"
 
 // const bill= "CREATE TABLE IF NOT EXISTS bill (\
