@@ -6,7 +6,7 @@ let db;
 async function connectDB(){
 
     try{
-        db= new sqlite.Database("../data/DevMedicos.db");
+        db= new sqlite.Database("../data/inventory.db");
         console.log("you are connected");  //API
     }catch(err){
             console.log(err.message);  //API
@@ -22,19 +22,6 @@ function closeDB(){
         console.log("error while close db", err.message);
     };
 };
-// function addnewItem(item){
-//     const query= "INSERT INTO items(item) VALUES(?)";
-//     db.run(query,[item], function(err){
-//         if(err){
-//             console.log(err.message);
-//         }
-//         else{
-//             console.log("item successfully inserted");
-//         };
-//     });
-// };
-
-// addnewItem("Crocine");
 
 async function additemtoItems(item) {
     try {
