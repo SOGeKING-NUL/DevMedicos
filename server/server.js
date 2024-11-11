@@ -83,7 +83,6 @@ async function additemtoInventory(quantity, bonus, pack_of,item, mrp, rate){
         console.log("err while adding to inventory", err.message);
     };
 };
-
 async function addnewshipment(invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount){
 
     try{
@@ -113,7 +112,7 @@ async function addnewshipment(invoice_no, quantity, bonus, pack_of, item, mrp, r
 async function main(){
 
     await connectDB();
-    await addnewshipment('S99PM_7U', 1, null, 5,'pineapple', 20, 10, 20);
+    await addnewshipment('S99PMEEM_7U', 1, null, 10,'apples', 230, 70, 34556); //invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount
     closeDB();
 
     
