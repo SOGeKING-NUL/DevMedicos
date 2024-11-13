@@ -23,7 +23,7 @@ const db = new sqlite.Database(dbFilePath, (err) => {
 
 const items = `
     CREATE TABLE IF NOT EXISTS items (
-        id INTEGER PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         item TEXT NOT NULL UNIQUE,
         mrp_per_unit DECIMAL(7,2) NOT NULL CHECK (mrp_per_unit >= 0)
     )
@@ -31,7 +31,7 @@ const items = `
 
 const inventory = `
     CREATE TABLE IF NOT EXISTS inventory (
-        id INTEGER PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         created_on DATE NOT NULL DEFAULT CURRENT_DATE,
         item TEXT NOT NULL UNIQUE,
         units INTEGER NOT NULL DEFAULT 0,
@@ -42,7 +42,7 @@ const inventory = `
 
 const shipment = `
     CREATE TABLE IF NOT EXISTS shipment (
-        id INTEGER PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         invoice_no TEXT NOT NULL,
         created_on DATE NOT NULL DEFAULT CURRENT_DATE,
         quantity INTEGER NOT NULL CHECK (quantity >= 0),
