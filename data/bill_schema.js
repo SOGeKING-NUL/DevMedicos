@@ -20,7 +20,7 @@ const bill_item="CREATE TABLE IF NOT EXISTS bill_item(\
                 bill_no INTEGER,\
                 inventory_id INTEGER,\
                 quantity INTEGER NOT NULL,\
-                total_price DECIMAL(10,2) NOT NULL,\
+                total_price_per_item DECIMAL(10,2) NOT NULL,\
                 FOREIGN KEY (bill_no) REFERENCES bill(bill_no),\
                 FOREIGN KEY(id) REFERENCES inventory(id)\
                 )"

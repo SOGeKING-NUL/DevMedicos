@@ -23,20 +23,25 @@ function closeDB(){
     };
 };
 
-async function additemtoItems(item) {
+async function additemtoItems(item, mrp_per_unit) {
     try {
       // Check if the item already exists in the items table
       const query = "SELECT item FROM items WHERE item = ?";
-      const row = await new Promise((resolve, reject) => {
-        db.get(query, [item], (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
+      try{
+        const row = await new Promise((resolve, reject) => {
+            db.get(query, [item, mr], (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+            });
         });
-      });
+        }catch(err){
+            console.error("error: ", err)
+        }
+
   
       if (!row) {
         // If item does not exist, insert it into items table
-        const insertQuery = "INSERT INTO items(item) VALUES (?)";
+        const insertQuery = "INSERT INTO items(item, mrp_per_unit) VALUES (?, ?)";
         await new Promise((resolve, reject) => {
           db.run(insertQuery, [item], (err) => {
             if (err) reject(err);
@@ -48,7 +53,7 @@ async function additemtoItems(item) {
         console.log(`${item} already exists in items`);
       }
     } catch (err) {
-      console.log("Error while adding item to items:", err.message);
+      console.error("Error while adding item to items:", err.message);
     }
   }
   
@@ -59,21 +64,20 @@ async function additemtoInventory(quantity, bonus, pack_of,item, mrp, rate){
         const rate_per_unit=rate/pack_of;
         const mrp_per_unit= mrp/pack_of;
         
-        const query= "INSERT INTO inventory(item, rate_per_unit, mrp_per_unit) VALUES(?, ?, ?)";
+        const query= "INSERT INTO inventory(item, units, rate_per_unit, mrp_per_unit) VALUES(?, ?, ?, ?)";
 
-        for(let i=0; i<total_units; i++){
-            await db.run(query,[item, rate_per_unit, mrp_per_unit]);
-        };
+        await db.run(query,[item,total_units, rate_per_unit, mrp_per_unit]);
         console.log("Sucessfully added to inventory");
 
     }catch(err){
         console.log("err while adding to inventory", err.message);
     };
 };
+
 async function addnewshipment(invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount){
 
     try{
-        await additemtoItems(item);
+        // await additemtoItems(item);
 
         const query= "INSERT INTO shipment(invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount) VALUES(?,?,?,?,?,?,?,?)";
 
