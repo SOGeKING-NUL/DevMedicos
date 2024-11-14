@@ -2,6 +2,14 @@ const { app } = require("express")();
 const sqlite = require("sqlite3").verbose();        //verbose makes debugging easier
 const util=  require("util");
 const { v4: uuidv4 } = require('uuid');
+const { customAlphabet } = require('nanoid');
+
+// Function to generate custom numeric IDs
+function generateCustomNumber() {
+    const digits = '0123456789';
+    const customId= customAlphabet(digits, 10);
+    return parseInt(customId, 10);
+}
 
 
 let db, runQuery, getQuery;
@@ -10,7 +18,7 @@ let db, runQuery, getQuery;
 async function connectDB(){
 
     try{
-        db= new sqlite.Database("../data/inventory.db");
+        db= new sqlite.Database("../data/DevMedicos.db");
         console.log("you are connected"); 
 
         runQuery= util.promisify(db.run.bind(db));
@@ -41,7 +49,7 @@ async function additemtoItems(item, mrp_per_unit) {
         // If item does not exist, insert it into items table
         const insertQuery = "INSERT INTO items(id,item, mrp_per_unit) VALUES (?, ?, ?)";
 
-        const id= uuidv4();
+        const id= generateCustomNumber();
 
         await getQuery(insertQuery, [id,item, parseFloat(mrp_per_unit)]);
         console.log("Successfully added to items");
@@ -60,7 +68,7 @@ async function additemtoInventory(item, total_units, rate_per_unit){
         
         const query= "INSERT INTO inventory(id, item, units, rate_per_unit) VALUES(?, ?, ?, ?)";
 
-        const id=uuidv4();
+        const id=generateCustomNumber();
 
         await runQuery(query, [id, item, total_units, parseFloat(rate_per_unit)]);
         console.log("Sucessfully added to inventory");
@@ -83,7 +91,7 @@ async function addnewshipment(invoice_no, quantity, bonus, pack_of, item, mrp, r
         const query= "INSERT INTO shipment(id, invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount) VALUES(?,?,?,?,?,?,?,?,?)";
 
         bonus = bonus !== null ? Math.floor(bonus) : null; //makes bonus from decimal to int, also no const added as bonus already declared
-        const id=uuidv4();
+        const id=generateCustomNumber();
 
         await runQuery(query,[id, invoice_no, quantity, bonus, pack_of, item, parseFloat(mrp), parseFloat(rate), parseFloat(amount)]);
 

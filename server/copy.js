@@ -1,13 +1,24 @@
-function generateCustomId(length) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+// Inventory list with {quantity, rate} objects
+let inventory = [
+  { quantity: 20, rate: 10 },
+  { quantity: 20, rate: 12 }
+];
+
+// Quantity to sell
+let quantityToSell = 30;
+
+// To track the total cost of apples sold
+let totalCost = 0;
+
+for (let i = 0; i < inventory.length; i++) {
+  if (quantityToSell > inventory[i].quantity) {
+      totalCost += inventory[i].quantity * inventory[i].rate;
+      quantityToSell -= inventory[i].quantity;
+  } else {
+      totalCost += quantityToSell * inventory[i].rate;
+      quantityToSell = 0;
+      break;
   }
-  return result;
 }
 
-// Usage
-const customId = generateCustomId(5);
-console.log(customId);  // Example output: "A1B2C"
+console.log("Total cost of apples sold:", totalCost);
