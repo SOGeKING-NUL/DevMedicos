@@ -8,7 +8,7 @@ const { customAlphabet } = require('nanoid');
 function generateCustomNumber() {
     const digits = '0123456789';
     const customId= customAlphabet(digits, 12);
-    return parseInt(customId, 10);
+    return parseInt(customId(), 10);
 }
 
 let db, runQuery, getQuery;
@@ -28,7 +28,7 @@ async function connectDB(){
         };
 };
 
-function closeDB(){
+async function closeDB(){
 
     try{
         db.close();
@@ -113,13 +113,14 @@ async function main(){
 
     try{
         await connectDB();
-        await additemtoShipment('ELS2988C', 4, null, 10,'apples', 90, 75, 300); //invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount
-        await additemtoShipment('MS129OER', 3, 2, 10,'apples', 90, 70, 210);
-        closeDB();
+        await additemtoShipment('ELSSSSS2988C', 4, null, 10,'pine', 90, 75, 300); //invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount
+        await additemtoShipment('MSS129OER', 3, 2, 10,'leg', 90, 70, 210);
+        await closeDB();
     }catch(err){
         console.error("error in main function", err.message)
     };
 };
-
 main();
 
+
+module.exports = { additemtoShipment };
