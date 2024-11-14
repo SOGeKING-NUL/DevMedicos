@@ -7,10 +7,9 @@ const { customAlphabet } = require('nanoid');
 // Function to generate custom numeric IDs
 function generateCustomNumber() {
     const digits = '0123456789';
-    const customId= customAlphabet(digits, 10);
+    const customId= customAlphabet(digits, 12);
     return parseInt(customId, 10);
 }
-
 
 let db, runQuery, getQuery;
 
@@ -63,14 +62,14 @@ async function additemtoItems(item, mrp_per_unit) {
     }
   }
   
-async function additemtoInventory(item, total_units, rate_per_unit){
+async function additemtoInventory(invoice_no, item, total_units, rate_per_unit){
     try{
         
-        const query= "INSERT INTO inventory(id, item, units, rate_per_unit) VALUES(?, ?, ?, ?)";
+        const query= "INSERT INTO inventory(id, invoice_no, item, units, rate_per_unit) VALUES(?, ?, ?, ?, ?)";
 
         const id=generateCustomNumber();
 
-        await runQuery(query, [id, item, total_units, parseFloat(rate_per_unit)]);
+        await runQuery(query, [id, invoice_no, item, total_units, parseFloat(rate_per_unit)]);
         console.log("Sucessfully added to inventory");
 
     }catch(err){
@@ -78,7 +77,7 @@ async function additemtoInventory(item, total_units, rate_per_unit){
     };
 };
 
-async function addnewshipment(invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount){
+async function additemtoShipment(invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount){
 
     try{
         const total_quantity=quantity+bonus;
@@ -95,7 +94,7 @@ async function addnewshipment(invoice_no, quantity, bonus, pack_of, item, mrp, r
 
         await runQuery(query,[id, invoice_no, quantity, bonus, pack_of, item, parseFloat(mrp), parseFloat(rate), parseFloat(amount)]);
 
-        await additemtoInventory(item, total_units, rate_per_unit);
+        await additemtoInventory(invoice_no, item, total_units, rate_per_unit);
 
         console.log("Shipment invoice successfully inserted");
     }
@@ -114,7 +113,8 @@ async function main(){
 
     try{
         await connectDB();
-        await addnewshipment('4OOEOEM_7U', 2, 3, 10,'apples', 210, 70, 34556); //invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount
+        await additemtoShipment('ELS2988C', 4, null, 10,'apples', 90, 75, 300); //invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount
+        await additemtoShipment('MS129OER', 3, 2, 10,'apples', 90, 70, 210);
         closeDB();
     }catch(err){
         console.error("error in main function", err.message)
