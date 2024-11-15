@@ -1,37 +1,6 @@
-const { app } = require("express")();
-const sqlite = require("sqlite3").verbose();        //verbose makes debugging easier
 const util=  require("util");
-const { v4: uuidv4 } = require('uuid');
 const { generateID } = require('./Generate_id.js');
-const {connectDB, closeDB}= require('./')
-
-
-let db, runQuery, getQuery;
-
-async function connectDB(){
-
-    try{
-        db= new sqlite.Database("../data/DevMedicos.db");
-        console.log("you are connected"); 
-
-        runQuery= util.promisify(db.run.bind(db));
-        getQuery= util.promisify(db.get.bind(db)); 
-        console.log(runQuery, getQuery)
-
-    }catch(err){
-            console.log(err.message);  //API
-        };
-};
-
-async function closeDB(){
-
-    try{
-        db.close();
-        console.log("Successfully closed DB");
-    }catch(err){
-        console.log("error while close db", err.message);
-    };
-};
+const {connectDB, closeDB,runQuery,getQuery}= require('./connect_db.js')
 
 async function additemtoItems(item, mrp_per_unit) {
     try {
