@@ -2,17 +2,11 @@ const { app } = require("express")();
 const sqlite = require("sqlite3").verbose();        //verbose makes debugging easier
 const util=  require("util");
 const { v4: uuidv4 } = require('uuid');
-const { customAlphabet } = require('nanoid');
+const { generateID } = require('./Generate_id.js');
+const {connectDB, closeDB}= require('./')
 
-// Function to generate custom numeric IDs
-function generateCustomNumber() {
-    const digits = '0123456789';
-    const customId= customAlphabet(digits, 12);
-    return parseInt(customId(), 10);
-}
 
 let db, runQuery, getQuery;
-
 
 async function connectDB(){
 
@@ -22,6 +16,7 @@ async function connectDB(){
 
         runQuery= util.promisify(db.run.bind(db));
         getQuery= util.promisify(db.get.bind(db)); 
+        console.log(runQuery, getQuery)
 
     }catch(err){
             console.log(err.message);  //API
@@ -48,7 +43,7 @@ async function additemtoItems(item, mrp_per_unit) {
         // If item does not exist, insert it into items table
         const insertQuery = "INSERT INTO items(id,item, mrp_per_unit) VALUES (?, ?, ?)";
 
-        const id= generateCustomNumber();
+        const id= generateID();
 
         await getQuery(insertQuery, [id,item, parseFloat(mrp_per_unit)]);
         console.log("Successfully added to items");
@@ -67,7 +62,7 @@ async function additemtoInventory(invoice_no, item, total_units, rate_per_unit){
         
         const query= "INSERT INTO inventory(id, invoice_no, item, units, rate_per_unit) VALUES(?, ?, ?, ?, ?)";
 
-        const id=generateCustomNumber();
+        const id=generateID();
 
         await runQuery(query, [id, invoice_no, item, total_units, parseFloat(rate_per_unit)]);
         console.log("Sucessfully added to inventory");
@@ -90,7 +85,7 @@ async function additemtoShipment(invoice_no, quantity, bonus, pack_of, item, mrp
         const query= "INSERT INTO shipment(id, invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount) VALUES(?,?,?,?,?,?,?,?,?)";
 
         bonus = bonus !== null ? Math.floor(bonus) : null; //makes bonus from decimal to int, also no const added as bonus already declared
-        const id=generateCustomNumber();
+        const id=generateID();
 
         await runQuery(query,[id, invoice_no, quantity, bonus, pack_of, item, parseFloat(mrp), parseFloat(rate), parseFloat(amount)]);
 
@@ -113,8 +108,8 @@ async function main(){
 
     try{
         await connectDB();
-        await additemtoShipment('ELSSSSS2988C', 4, null, 10,'pine', 90, 75, 300); //invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount
-        await additemtoShipment('MSS129OER', 3, 2, 10,'leg', 90, 70, 210);
+        await additemtoShipment('ELSSSSS2988C', 9, null, 10,'ginger', 21, 31, 500); //invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount
+        // await additemtoShipment('MSS129OER', 3, 2, 10,'leg', 90, 70, 210);
         await closeDB();
     }catch(err){
         console.error("error in main function", err.message)
