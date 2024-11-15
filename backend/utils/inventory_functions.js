@@ -14,7 +14,7 @@ async function additemtoItems(item, mrp_per_unit) {
 
         const id= generateID();
 
-        await getQuery(insertQuery, [id,item, parseFloat(mrp_per_unit)]);
+        await runQuery(insertQuery, [id,item, parseFloat(mrp_per_unit)]);
         console.log("Successfully added to items");
       } 
       
@@ -77,7 +77,7 @@ async function main(){
 
     try{
         await connectDB();
-        await additemtoShipment('ELSSSSS2988C', 9, null, 10,'ginger', 21, 31, 500); 
+        await additemtoShipment('ELSSSSS2988C', 9, null, 10,'pyaz', 21, 31, 500); 
         // await additemtoShipment('MSS129OER', 3, 2, 10,'leg', 90, 70, 210);
         await closeDB();
     }catch(err){

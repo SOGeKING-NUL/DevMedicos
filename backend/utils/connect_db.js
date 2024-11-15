@@ -7,37 +7,8 @@ async function connectDB() {
     try {
         db = new sqlite.Database("../../data/DevMedicos.db");
         console.log("You are connected");
-
-        // Create tables if they don't exist
-        await createTables();
-        console.log("Tables created/verified");
     } catch (err) {
         console.log("Error while connecting to DB:", err.message);
-    }
-}
-
-async function createTables() {
-    const itemsTable = `
-        CREATE TABLE IF NOT EXISTS items (
-            id TEXT PRIMARY KEY,
-            item TEXT NOT NULL,
-            mrp_per_unit REAL NOT NULL
-        )`;
-
-    const shipmentTable = `
-        CREATE TABLE IF NOT EXISTS shipment (
-            invoice_id TEXT PRIMARY KEY,
-            supplier TEXT NOT NULL,
-            invoice_date TEXT NOT NULL,
-            invoice_amount REAL NOT NULL,
-            payment_status TEXT NOT NULL
-        )`;
-
-    try {
-        await runQuery(itemsTable, []);
-        await runQuery(shipmentTable, []);
-    } catch (err) {
-        console.log("Error creating tables:", err.message);
     }
 }
 
@@ -74,4 +45,14 @@ async function getQuery(query, params) {
     }
 }
 
-module.exports = { connectDB, closeDB, runQuery, getQuery };
+async function allQuery(query, params) {
+    try {
+        const promisifiedAll = util.promisify(db.all.bind(db));
+        return await promisifiedAll(query, params);
+    } catch (err) {
+        console.log("Error executing allQuery:", err.message);
+        throw err;
+    }
+ }
+
+module.exports = { connectDB, closeDB, runQuery, getQuery, allQuery };
