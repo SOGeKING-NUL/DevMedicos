@@ -77,7 +77,7 @@ async function main(){
 
     try{
         await connectDB();
-        await additemtoShipment('ELSSSSS2988C', 9, null, 10,'ginger', 21, 31, 500); //invoice_no, quantity, bonus, pack_of, item, mrp, rate, amount
+        await additemtoShipment('ELSSSSS2988C', 9, null, 10,'ginger', 21, 31, 500); 
         // await additemtoShipment('MSS129OER', 3, 2, 10,'leg', 90, 70, 210);
         await closeDB();
     }catch(err){
