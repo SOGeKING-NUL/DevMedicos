@@ -5,7 +5,7 @@ const {additemtoItems}= require("../controllers/ItemsControllers");
 
 
 
-router.post("/inventory/add", additemtoItems);
+router.post("/add", additemtoItems);
 
 
 module.exports= router;

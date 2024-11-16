@@ -11,6 +11,8 @@ app.get("/", (req,res)=>{
         message: "all is well"
     });
 })
+
+
 app.use(express.json());
 
 

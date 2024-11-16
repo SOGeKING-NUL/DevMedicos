@@ -1,4 +1,5 @@
 const {runQuery, getQuery, allQuery}=require("../utils/connect_db");
+const{generateID}= require("../utils/Generate_id.js")
 
 
 
@@ -18,17 +19,22 @@ exports.additemtoItems= async(req,res)=>{
   
           await runQuery(insertQuery, [id,item, parseFloat(mrp_per_unit)]);
           console.log("Successfully added to items");
+          res.status(201).json({message: "Successfully added to items"});
         } 
         
         else {
           console.log(`${item} already exists in items`);
+          res.status(400).json({message: `${item} already exists in items`});
+
         }
       } catch (err) {
         console.error("Error while adding item to items:", err.message);
+        res.status(500).json({error : err.message});
+
       }
 };
 
-exports.additemtoItems= async(req,res)=>{
+exports.showitemsinitems= async(req,res)=>{
 
 
 };
