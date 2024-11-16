@@ -117,11 +117,6 @@ db.serialize(() => {        //makes everything execute in order
         }
     });    
     
-    db.run(bill_item, (err)=>{
-        if(err){
-            console.log("error while creating bill_item: ", err.message);
-        }
-    });
 
     // Close the database connection after all queries are done
     db.close((err) => {
