@@ -1,7 +1,8 @@
 const express= require("express");
 router= express.Router();
-const{additemtoShipments}= require("../controllers/ShipmentControllers.js")
+const{additemtoShipments, getShipments}= require("../controllers/ShipmentControllers.js")
 
-router.post("/addshipment", additemtoShipments);
+router.post("/addshipments", additemtoShipments);
+router.get("/getShipments", getShipments);
 
 module.exports= router;
