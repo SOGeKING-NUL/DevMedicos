@@ -1,6 +1,5 @@
-const {runQuery, getQuery, allQuery}=require("../utils/connect_db");
+const {runQuery, getQuery, allQuery}=require("../utils/connect_db.js");
 const{generateID}= require("../utils/Generate_id.js")
-
 
 
 exports.additemtoItems= async(req,res)=>{
@@ -19,7 +18,7 @@ exports.additemtoItems= async(req,res)=>{
   
           await runQuery(insertQuery, [id,item, parseFloat(mrp_per_unit)]);
           console.log("Successfully added to items");
-          res.status(201).json({message: "Successfully added to items"});
+          res.status(201).json({message: "Successfully added to items"}); //this status is also checked in shipmentcontroller to additemtoShipment
         } 
         
         else {
@@ -34,10 +33,24 @@ exports.additemtoItems= async(req,res)=>{
       }
 };
 
-exports.showitemsinitems= async(req,res)=>{
+exports.showiteminItems= async(req,res)=>{
+  
+  const query= "SELECT * FROM items";
+  try{
+    const rows= await allQuery(query, []);
+    res.json({items: rows})
 
-
+  }catch(err){
+    console.log("error fetching all the items");
+    res.status(500).json({error: err.message});
+  }
 };
+
+
+
+
+
+
 
 
 

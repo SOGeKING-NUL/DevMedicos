@@ -1,6 +1,8 @@
 const express = require('express');
 const{connectDB,closeDB}= require("./connect_db.js");
 const itemRoutes= require("../routes/ItemsRoutes.js");
+const ShipmentRoutes= require("../routes/ShipmentRoutes.js");
+const InventoryRoutes= require("../routes/InventoryRoutes.js");
 const app = express();
 
 
@@ -17,22 +19,9 @@ app.use(express.json());
 
 
 app.use("/api/items", itemRoutes);
+app.use('/api/inventory',InventoryRoutes);
+app.use('/api/shipments',ShipmentRoutes);
 
-
-app.get('/api/shipments', async(req, res) => {
-    const query = `SELECT * FROM shipment`;
-    await db.all(query, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({
-            shipments: rows
-        });
-    });
-});
-
-app.post('/api/shipments',(req, res)=>{})
 
 
 const port=3500;

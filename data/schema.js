@@ -67,14 +67,14 @@ const shipment = `
 
 //billing
 
-const bill= `CREATE TABLE IF NOT EXISTS bill (
-    bill_no INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_on DATE DEFAULT CURRENT_DATE,
-    total_bill_sales DECIMAL(7,2) NOT NULL CHECK(total_bill_sales>=0),
-    total_profit DECIAML(7,2) NOT NULL
-    )`
+// const bill= `CREATE TABLE IF NOT EXISTS bill (
+//     bill_no INTEGER PRIMARY KEY AUTOINCREMENT,
+//     created_on DATE DEFAULT CURRENT_DATE,
+//     total_bill_sales DECIMAL(7,2) NOT NULL CHECK(total_bill_sales>=0),
+//     total_profit DECIAML(7,2) NOT NULL
+//     )`
 
-const bill_item=`CREATE TABLE IF NOT EXISTS bill_item(
+const bill=`CREATE TABLE IF NOT EXISTS bill_item(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         bill_no INTEGER,
         item TEXT NOT NULL,
