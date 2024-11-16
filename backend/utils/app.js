@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors'); // Import the cors package
 const{connectDB,closeDB}= require("./connect_db.js");
 const itemRoutes= require("../routes/ItemsRoutes.js");
 const ShipmentRoutes= require("../routes/ShipmentRoutes.js");
@@ -16,6 +17,8 @@ app.get("/", (req,res)=>{
 
 
 app.use(express.json());
+app.use(cors());
+
 
 
 app.use("/api/items", itemRoutes);
