@@ -10,151 +10,163 @@
       padding: 20px;
     }
     .searchContainer {
-      position: relative;
-      width: 300px;
-    }
-    .searchInput {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    .suggestions {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      border: 1px solid #ccc;
-      border-top: none;
-      background: white;
-      z-index: 1000;
-      max-height: 200px;
-      overflow-y: auto;
-      border-radius: 0 0 5px 5px;
-    }
-    .searchItem {
-      padding: 10px;
-      cursor: pointer;
-    }
-    .searchItem:hover,
-    .searchItem.focused {
-      background: #f0f0f0;
-    }
-    .searchItem:active {
-      background: #e0e0e0;
-    }
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem;
+}
+
+.searchInput {
+  height: 2.5rem;
+  width: 100%;
+  max-width: 25rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 0.06rem solid #ccc;
+  border-radius: 0.25rem;
+  outline: none;
+}
+
+.suggestions {
+  width: 100%;
+  max-width: 26rem;
+  max-height: 13rem;
+  overflow-y: auto;
+  margin-top: 0.3rem;
+  box-shadow: 0 0.35rem 0.4rem rgba(0, 0, 0, 0.4);
+}
+
+.searchItem {
+  padding: 0.6rem;
+  border-bottom: 0.06rem solid #ccc;
+  cursor: pointer;
+}
+
+.searchItem:hover {
+  background: #f0f0f0;
+  color: black;
+}
+
+.focused {
+  background-color: #007bff;
+  color: white;
+}
   </style>
 </head>
 <body>
-  <div class="searchContainer">
-    <input type="text" class="searchInput" placeholder="Search items...">
-    <div class="suggestions"></div>
+  <div class='searchContainer'>
+    <input placeholder='Enter text here...' class='searchInput' />
+    <div class='suggestions'></div>
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const input = document.querySelector('.searchInput');
-      const suggestions = document.querySelector('.suggestions');
-      let currentFocussedIndex = -1;
-
-      input.addEventListener('keyup', debounce(handleAutoSuggestions, 300));
-
-      function createSearchItem(item) {
-        const searchItem = document.createElement('div');
-        searchItem.classList.add('searchItem');
-        searchItem.textContent = item;
-        return searchItem;
-      }
-
-      function handleClick(event) {
-        input.value = event.target.textContent;
-        clearSuggestions();
-      }
-
-      function clearSuggestions() {
-        suggestions.innerHTML = '';
-      }
-
-      function renderSuggestions(suggestionsList) {
-        clearSuggestions();
-        suggestionsList.forEach(item => {
-          const searchItem = createSearchItem(item);
-          searchItem.addEventListener('click', handleClick);
-          suggestions.appendChild(searchItem);
-        });
-      }
-
-      async function getSuggestions(searchInput) {
-        if (!searchInput) {
-          clearSuggestions();
-          return;
-        }
-        try {
-          const res = await fetch(`/api/search?q=${encodeURIComponent(searchInput)}`);
-          const data = await res.json();
-          renderSuggestions(data.suggestions);
-        } catch (error) {
-          console.error('Error fetching suggestions:', error);
-        }
-      }
-
-      function handleAutoSuggestions(event) {
-        const key = event.key;
-        if (key === 'ArrowDown' || key === 'ArrowUp') {
-          event.preventDefault();
-          currentFocussedIndex = updateFocuseedIndex(key, suggestions.children.length);
-          updateFocus();
-        } else if (key === 'Enter') {
-          handleEnterKey();
-        } else {
-          getSuggestions(event.target.value);
-        }
-      }
-
-      function updateFocuseedIndex(key, maxIndex) {
-        if (key === 'ArrowDown') {
-          return Math.min(currentFocussedIndex + 1, maxIndex - 1);
-        } else {
-          return Math.max(currentFocussedIndex - 1, -1);
-        }
-      }
-
-      function handleEnterKey() {
-        if (currentFocussedIndex !== -1) {
-          input.value = suggestions.children[currentFocussedIndex].textContent;
-          clearSuggestions();
-        }
-      }
-
-      function updateFocus() {
-        for (let i = 0; i < suggestions.children.length; i++) {
-          suggestions.children[i].classList.remove('focused');
-        }
-
-        if (currentFocussedIndex >= 0 && currentFocussedIndex < suggestions.children.length) {
-          suggestions.children[currentFocussedIndex].classList.add('focused');
-        }
-      }
-
-      function debounce(func, delay) {
-        let timer;
-        return function (...args) {
-          const context = this;
-          if (timer) clearTimeout(timer);
-          timer = setTimeout(() => {
-            timer = null;
-            func.apply(context, args);
-          }, delay);
-        };
-      }
-
-      document.body.addEventListener('click', function (event) {
-        if (!event.target.closest('.searchContainer')) {
-          clearSuggestions();
-        }
-      });
-    });
+  
+  let list;
+  document.addEventListener('DOMContentLoaded', function() {
+	const input = document.querySelector('.searchInput');
+  const suggestions = document.querySelector('.suggestions');
+  let currentFocussedIndex = -1;
+  
+  input.addEventListener('keyup', debounce(handleAutoSuggestions, 200));
+  
+  function createSearchItem(item) {
+  	const searchItem = document.createElement('div');
+    searchItem.classList.add('searchItem');
+    searchItem.textContent = item;
+    return searchItem;
+  }
+  
+  function handleClick(event) {
+  	input.value = event.target.textContent;
+    clearSuggestions();
+  }
+  
+  function clearSuggestions() {
+  	suggestions.innerHTML = '';
+  }
+  
+  function renderSuggestions(suggestionsList) {
+  	clearSuggestions();
+  	suggestionsList.forEach(item => {
+    	const searchItem = createSearchItem(item);
+      searchItem.addEventListener('click', handleClick);
+      suggestions.appendChild(searchItem);
+    })
+  }
+  
+  async function getSuggestions(searchInput) {
+  	try {
+    	const res = await fetch(`http://localhost:3500/api/search?q=${searchInput}`);
+      const data = await res.json();
+      list = data.suggestions;
+      console.log(list)
+      // const res = await fetch(`https://dummyjson.com/products/search?q=${searchInput}`);
+      // const data = await res.json();
+      // const list = data.products.map(item => item.title);
+      renderSuggestions(list);
+    
+    }catch (error) {
+    	console.log(error);
+    }
+  }
+  
+  function handleAutoSuggestions(event) {
+  	const key = event.key;
+    if(key === 'ArrowDown' || key === 'ArrowUp') {
+    	 event.preventDefault();
+       currentFocussedIndex = updateFocuseedIndex(key, suggestions.children.length);
+       updateFocus();
+    } else if (key === 'Enter') {
+    	handleEnterKey();
+    } else {
+    	getSuggestions(event.target.value);
+    }
+  }
+  
+  function updateFocuseedIndex(key, maxIndex) {
+   	if(key === 'ArrowDown') {
+    	return Math.min(currentFocussedIndex + 1, maxIndex - 1);
+    }else {
+    	return Math.max(currentFocussedIndex - 1, -1);
+    }
+  }
+  
+  function handleEnterKey() {
+  	if(currentFocussedIndex !== -1) {
+    	input.value = suggestions.children[currentFocussedIndex].textContent;
+      clearSuggestions();
+    }	
+  }
+  
+  function updateFocus() {
+  	for(let i = 0; i< suggestions.children.length; i++) {
+    	suggestions.children[i].classList.remove('focused')
+    }
+    
+    if(currentFocussedIndex >= currentFocussedIndex < suggestions.children.length) {
+    	suggestions.children[currentFocussedIndex].classList.add('focused');
+    }
+  }
+  
+  function debounce(func, delay) {
+  	let timer;
+    return function(...args) {
+    	const context = this;
+      if(timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+      	timer = null;
+        func.apply(context, args);
+      }, delay);
+    }
+  }
+  
+  document.body.addEventListener('click', function(event) {
+    if(event.target.classList[0] === 'searchContainer') {
+    	clearSuggestions();
+    }
+  })
+})
   </script>
 </body>
 </html>
