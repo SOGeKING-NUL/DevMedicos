@@ -1,9 +1,10 @@
-const { allQuery } = require("../utils/connect_db");
+const sqlite3= require('sqlite3')
+const db = new sqlite3.Database("../../data/DevMedicos.db");
+
 
 exports.searchinItems= async(req, res) => {
   const queryText = req.query.q;
-  if (!queryText) {
-    return res.json({ suggestions: [] });
+  if (!queryText) {return res.json({ suggestions: [] });
   }
 
   const query = `
@@ -14,7 +15,7 @@ exports.searchinItems= async(req, res) => {
     LIMIT 8;
   `;
 
-  allQuery(query, [`%${queryText}%`], (err, rows) => {
+  await db.all(query, [`%${queryText}%`], (err, rows) => {
     if (err) {
       console.error(err.message);
       return res.status(500).json({ error: 'Database query failed' });
