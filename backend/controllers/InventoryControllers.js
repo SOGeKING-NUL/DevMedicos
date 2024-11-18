@@ -15,7 +15,12 @@ exports.additemtoInventory= async(req,res)=>{
 
     }catch(err){
         console.log("err while adding to inventory", err.message);
-        res.status(400).json({error: err.message});
+        if (err.code === "SQLITE_CONSTRAINT" && err.message.includes("UNIQUE")) {
+            return res.status(409).json({error: "Duplicate inventory entry. This item already exists."});
+        }
+
+        //for other errors
+        res.status(400).json({error: "Failed to add item to inventory: " + err.message});
     };
 };
 

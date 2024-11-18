@@ -32,7 +32,7 @@ app.get('/api/search', async(req, res) => {
       return res.status(500).json({ error: 'Database query failed' });
     }
     const suggestions = rows.map(row => row.item);
-    res.json({ suggestions });
+    return res.json({ suggestions });
   });
 });
 

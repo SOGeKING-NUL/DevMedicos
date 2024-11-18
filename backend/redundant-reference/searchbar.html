@@ -27,7 +27,15 @@
   border-radius: 0.25rem;
   outline: none;
 }
-
+.selectedWordContainer {
+    margin-top: 20px;
+    font-size: 1.2rem;
+    color: #333;
+  }
+  .selectedWord {
+    font-weight: bold;
+    color: #007bff;
+  }
 .suggestions {
   width: 100%;
   max-width: 26rem;
@@ -59,114 +67,123 @@
     <input placeholder='Enter text here...' class='searchInput' />
     <div class='suggestions'></div>
   </div>
+  <div class="selectedWordContainer">
+    <p>Selected Word: <span class="selectedWord"></span></p>
+  </div>
+  </div>
 
   <script>
   
-  let list;
-  document.addEventListener('DOMContentLoaded', function() {
-	const input = document.querySelector('.searchInput');
+  document.addEventListener('DOMContentLoaded', function () {
+  const input = document.querySelector('.searchInput');
   const suggestions = document.querySelector('.suggestions');
+  const selectedWordDisplay = document.querySelector('.selectedWord');
   let currentFocussedIndex = -1;
-  
+
   input.addEventListener('keyup', debounce(handleAutoSuggestions, 200));
-  
+
   function createSearchItem(item) {
-  	const searchItem = document.createElement('div');
+    const searchItem = document.createElement('div');
     searchItem.classList.add('searchItem');
     searchItem.textContent = item;
     return searchItem;
   }
-  
+
   function handleClick(event) {
-  	input.value = event.target.textContent;
+    const selectedText = event.target.textContent;
+    input.value = selectedText;
+    displaySelectedWord(selectedText);
     clearSuggestions();
   }
-  
+
   function clearSuggestions() {
-  	suggestions.innerHTML = '';
+    suggestions.innerHTML = '';
   }
-  
+
   function renderSuggestions(suggestionsList) {
-  	clearSuggestions();
-  	suggestionsList.forEach(item => {
-    	const searchItem = createSearchItem(item);
+    clearSuggestions();
+    suggestionsList.forEach(item => {
+      const searchItem = createSearchItem(item);
       searchItem.addEventListener('click', handleClick);
       suggestions.appendChild(searchItem);
-    })
+    });
   }
-  
+
   async function getSuggestions(searchInput) {
-  	try {
-    	const res = await fetch(`http://localhost:3500/api/search?q=${searchInput}`);
+    try {
+      const res = await fetch(`http://localhost:3500/api/search?q=${searchInput}`);
       const data = await res.json();
       list = data.suggestions;
-      console.log(list)
-      // const res = await fetch(`https://dummyjson.com/products/search?q=${searchInput}`);
-      // const data = await res.json();
-      // const list = data.products.map(item => item.title);
+      console.log(list);
       renderSuggestions(list);
-    
-    }catch (error) {
-    	console.log(error);
+    } catch (error) {
+      console.log(error);
     }
   }
-  
+
   function handleAutoSuggestions(event) {
-  	const key = event.key;
-    if(key === 'ArrowDown' || key === 'ArrowUp') {
-    	 event.preventDefault();
-       currentFocussedIndex = updateFocuseedIndex(key, suggestions.children.length);
-       updateFocus();
+    const key = event.key;
+    if (key === 'ArrowDown' || key === 'ArrowUp') {
+      event.preventDefault();
+      currentFocussedIndex = updateFocusedIndex(key, suggestions.children.length);
+      updateFocus();
     } else if (key === 'Enter') {
-    	handleEnterKey();
+      handleEnterKey();
     } else {
-    	getSuggestions(event.target.value);
+      getSuggestions(event.target.value);
     }
   }
-  
-  function updateFocuseedIndex(key, maxIndex) {
-   	if(key === 'ArrowDown') {
-    	return Math.min(currentFocussedIndex + 1, maxIndex - 1);
-    }else {
-    	return Math.max(currentFocussedIndex - 1, -1);
+
+  function updateFocusedIndex(key, maxIndex) {
+    if (key === 'ArrowDown') {
+      return Math.min(currentFocussedIndex + 1, maxIndex - 1);
+    } else {
+      return Math.max(currentFocussedIndex - 1, -1);
     }
   }
-  
+
   function handleEnterKey() {
-  	if(currentFocussedIndex !== -1) {
-    	input.value = suggestions.children[currentFocussedIndex].textContent;
+    if (currentFocussedIndex !== -1) {
+      const selectedText = suggestions.children[currentFocussedIndex].textContent;
+      input.value = selectedText;
+      displaySelectedWord(selectedText);
       clearSuggestions();
-    }	
+    }
   }
-  
+
   function updateFocus() {
-  	for(let i = 0; i< suggestions.children.length; i++) {
-    	suggestions.children[i].classList.remove('focused')
+    for (let i = 0; i < suggestions.children.length; i++) {
+      suggestions.children[i].classList.remove('focused');
     }
-    
-    if(currentFocussedIndex >= currentFocussedIndex < suggestions.children.length) {
-    	suggestions.children[currentFocussedIndex].classList.add('focused');
+
+    if (currentFocussedIndex >= 0 && currentFocussedIndex < suggestions.children.length) {
+      suggestions.children[currentFocussedIndex].classList.add('focused');
     }
   }
-  
+
+  function displaySelectedWord(word) {
+    selectedWordDisplay.textContent = word;
+  }
+
   function debounce(func, delay) {
-  	let timer;
-    return function(...args) {
-    	const context = this;
-      if(timer) clearTimeout(timer);
+    let timer;
+    return function (...args) {
+      const context = this;
+      if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-      	timer = null;
+        timer = null;
         func.apply(context, args);
       }, delay);
-    }
+    };
   }
-  
-  document.body.addEventListener('click', function(event) {
-    if(event.target.classList[0] === 'searchContainer') {
-    	clearSuggestions();
+
+  document.body.addEventListener('click', function (event) {
+    if (event.target.classList[0] === 'searchContainer') {
+      clearSuggestions();
     }
-  })
-})
+  });
+});
+
   </script>
 </body>
 </html>
