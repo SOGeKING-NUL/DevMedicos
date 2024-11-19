@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import ShipmentPage from './components/ShipmentPage';
+import BillingPage from './components/BillingPage';
 import InventorySection from './components/InventorySection';
 import RecentActivity from './components/RecentActivity';
 
@@ -22,6 +23,7 @@ function App() {
             </main>
           } />
           <Route path="/shipment" element={<ShipmentPage />} />
+          <Route path="/bills" element={<BillingPage />} />
         </Routes>
       </div>
     </Router>

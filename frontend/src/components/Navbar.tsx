@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Menu, Bell, Settings, User } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="bg-white shadow-sm">
+    <nav className="bg-white shadow-sm relative">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -20,24 +20,18 @@ const Navbar = () => {
             <a href="#" className="text-gray-700 hover:text-blue-600">
               Inventory
             </a>
-
             <Link to="/shipment" className="text-gray-700 hover:text-blue-600">
               Shipment
             </Link>
-            <a href="#" className="text-gray-700 hover:text-blue-600">
+            <Link to="/bills" className="text-gray-700 hover:text-blue-600">
               Bills
-            </a>
+            </Link>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <Bell className="h-5 w-5 text-gray-600 cursor-pointer" />
-            <Settings className="h-5 w-5 text-gray-600 cursor-pointer" />
-            <User className="h-5 w-5 text-gray-600 cursor-pointer" />
-            <Menu
-              className="h-6 w-6 md:hidden cursor-pointer"
-              onClick={() => setIsOpen(!isOpen)}
-            />
-          </div>
+          <Menu
+            className="h-6 w-6 md:hidden cursor-pointer"
+            onClick={() => setIsOpen(!isOpen)}
+          />
         </div>
       </div>
 
@@ -56,19 +50,18 @@ const Navbar = () => {
             >
               Inventory
             </a>
-            
             <Link
               to="/shipment"
               className="block px-3 py-2 text-gray-700 hover:bg-gray-100"
             >
               Shipment
             </Link>
-            <a
-              href="#"
+            <Link
+              to="/bills"
               className="block px-3 py-2 text-gray-700 hover:bg-gray-100"
             >
               Bills
-            </a>
+            </Link>
           </div>
         </div>
       )}
