@@ -1,9 +1,3 @@
-// Inventory list with {quantity, rate} objects
-let inventory = [
-  { quantity: 20, rate: 10 },
-  { quantity: 20, rate: 12 }
-];
-
 // Quantity to sell
 let quantityToSell = 30;
 
@@ -22,3 +16,4 @@ for (let i = 0; i < inventory.length; i++) {
 }
 
 console.log("Total cost of apples sold:", totalCost);
+

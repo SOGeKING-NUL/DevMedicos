@@ -5,7 +5,7 @@ let db;
 
 async function connectDB() {
     try {
-        db = new sqlite.Database("../../data/DevMedicos.db");
+        db = new sqlite.Database("../models/DevMedicos.db");
         console.log("You are connected");
     } catch (err) {
         console.log("Error while connecting to DB:", err.message);
