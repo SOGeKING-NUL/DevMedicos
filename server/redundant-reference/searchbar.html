@@ -71,9 +71,8 @@
     <p>Selected Word: <span class="selectedWord"></span></p>
   </div>
   </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
-  
   document.addEventListener('DOMContentLoaded', function () {
   const input = document.querySelector('.searchInput');
   const suggestions = document.querySelector('.suggestions');
@@ -111,15 +110,15 @@
 
   async function getSuggestions(searchInput) {
     try {
-      const res = await fetch(`http://localhost:3500/api/search?q=${searchInput}`);
-      const data = await res.json();
-      list = data.suggestions;
-      console.log(list);
-      renderSuggestions(list);
-    } catch (error) {
-      console.log(error);
-    }
-  }
+    const response = await axios.get(`http://localhost:3500/api/search?q=${searchInput}`);
+    list = response.data.suggestions;
+    console.log(list);
+    renderSuggestions(list);
+  } catch (error) {
+    console.log(error);
+  };
+};
+
 
   function handleAutoSuggestions(event) {
     const key = event.key;

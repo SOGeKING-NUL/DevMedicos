@@ -5,7 +5,7 @@ const app = express();
 const PORT = 3500;
 
 // Connect to SQLite database
-const db = new sqlite3.Database("../../data/DevMedicos.db");
+const db = new sqlite3.Database("../models/DevMedicos.db");
 
 // Middleware for parsing query parameters
 app.use(express.json());
