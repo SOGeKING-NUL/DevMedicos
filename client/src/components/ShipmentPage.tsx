@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Plus, X, Search, Eye, Trash2 } from 'lucide-react';
+import { saveShipments, ShipmentData } from '../services/shipmentService';
 
 interface ShipmentItem {
   itemName: string;
@@ -17,16 +18,6 @@ interface Shipment {
   totalAmount: number;
   invoiceId: string;
   items: ShipmentItem[];
-}
-
-interface ShipmentData {
-  invoice_no: string;
-  quantity: string;
-  bonus: string;
-  pack_of: string;
-  item: string;
-  mrp: string;
-  rate: string;
 }
 
 const emptyItem: ShipmentItem = {
@@ -56,6 +47,8 @@ const ShipmentPage = () => {
   const [invoiceId, setInvoiceId] = useState('');
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRefs = useRef<{ [key: string]: HTMLInputElement }>({});
 
   const validateField = (value: string) => value.trim() !== '';
@@ -67,7 +60,6 @@ const ShipmentPage = () => {
       const currentValue = (e.target as HTMLInputElement).value;
       let isValid = true;
 
-      // Validate current field
       if (field !== 'bonus' && !validateField(currentValue)) {
         setValidationErrors(prev => ({
           ...prev,
@@ -77,23 +69,19 @@ const ShipmentPage = () => {
       }
 
       if (isValid) {
-        // Clear validation error for current field
         setValidationErrors(prev => {
           const newErrors = { ...prev };
           delete newErrors[`${field}-${index}`];
           return newErrors;
         });
 
-        // Define field order
         const fieldOrder: (keyof ShipmentItem)[] = ['itemName', 'quantity', 'bonus', 'packOf', 'mrp', 'rate'];
         const currentFieldIndex = fieldOrder.indexOf(field);
 
         if (currentFieldIndex < fieldOrder.length - 1) {
-          // Move to next field in same row
           const nextField = fieldOrder[currentFieldIndex + 1];
           inputRefs.current[`${nextField}-${index}`]?.focus();
         } else if (index < items.length - 1) {
-          // Move to first field of next row
           inputRefs.current[`itemName-${index + 1}`]?.focus();
         }
       }
@@ -101,14 +89,12 @@ const ShipmentPage = () => {
   };
 
   const handleItemChange = (index: number, field: keyof ShipmentItem, value: string) => {
-    // Validate integer inputs
     if (['quantity', 'bonus', 'packOf'].includes(field)) {
       if (value && !Number.isInteger(Number(value))) {
         return;
       }
     }
     
-    // Validate decimal inputs for mrp and rate
     if (['mrp', 'rate'].includes(field)) {
       if (value && !/^\d*\.?\d*$/.test(value)) {
         return;
@@ -127,21 +113,19 @@ const ShipmentPage = () => {
     
     setItems(newItems);
 
-    // Save to localStorage
     if (invoiceId) {
       const shipmentData: ShipmentData = {
         invoice_no: invoiceId,
-        quantity: newItems[index].quantity,
-        bonus: newItems[index].bonus,
-        pack_of: newItems[index].packOf,
+        quantity: parseInt(newItems[index].quantity) || 0,
+        bonus: parseInt(newItems[index].bonus) || 0,
+        pack_of: parseInt(newItems[index].packOf) || 0,
         item: newItems[index].itemName,
-        mrp: newItems[index].mrp,
-        rate: newItems[index].rate
+        mrp: parseFloat(newItems[index].mrp) || 0,
+        rate: parseFloat(newItems[index].rate) || 0
       };
       localStorage.setItem(`shipment_${invoiceId}_${index}`, JSON.stringify(shipmentData));
     }
 
-    // If all fields except bonus are filled, add a new row
     if (index === items.length - 1 && 
         validateField(newItems[index].itemName) &&
         validateField(newItems[index].quantity) &&
@@ -158,7 +142,6 @@ const ShipmentPage = () => {
       newItems.splice(index, 1);
       setItems(newItems);
 
-      // Remove from localStorage
       if (invoiceId) {
         localStorage.removeItem(`shipment_${invoiceId}_${index}`);
       }
@@ -169,17 +152,29 @@ const ShipmentPage = () => {
     setItems([...items, {...emptyItem}]);
   };
 
-  const handleSubmit = () => {
+  const formatShipmentData = (validItems: ShipmentItem[]): ShipmentData[] => {
+    return validItems.map(item => ({
+      invoice_no: invoiceId,
+      quantity: parseInt(item.quantity) || 0,
+      bonus: parseInt(item.bonus) || 0,
+      pack_of: parseInt(item.packOf) || 0,
+      item: item.itemName,
+      mrp: parseFloat(item.mrp) || 0,
+      rate: parseFloat(item.rate) || 0
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     const errors: {[key: string]: boolean} = {};
     let hasError = false;
 
-    // Validate invoice ID
     if (!validateField(invoiceId)) {
       errors['invoiceId'] = true;
       hasError = true;
     }
 
-    // Filter and validate items
     const validItems = items.filter(item => {
       const isValid = validateField(item.itemName) &&
                      validateField(item.quantity) &&
@@ -202,31 +197,44 @@ const ShipmentPage = () => {
     setValidationErrors(errors);
 
     if (!hasError && validItems.length > 0) {
-      const totalAmount = validItems.reduce((sum, item) => sum + item.amount, 0);
-      const newShipment: Shipment = {
-        id: Date.now().toString(),
-        date: new Date().toISOString().split('T')[0],
-        totalAmount,
-        invoiceId,
-        items: validItems
-      };
-      
-      setShipments([...shipments, newShipment]);
-      setShowForm(false);
-      setItems([{...emptyItem}]);
-      setInvoiceId('');
-      setValidationErrors({});
-      setShowSuccess(true);
+      setIsSubmitting(true);
+      setErrorMessage(null);
 
-      // Clear localStorage for this invoice
-      for (let i = 0; i < items.length; i++) {
-        localStorage.removeItem(`shipment_${invoiceId}_${i}`);
+      try {
+        const shipmentData = formatShipmentData(validItems);
+        await saveShipments(shipmentData);
+
+        const totalAmount = validItems.reduce((sum, item) => sum + item.amount, 0);
+        const newShipment: Shipment = {
+          id: Date.now().toString(),
+          date: new Date().toISOString().split('T')[0],
+          totalAmount,
+          invoiceId,
+          items: validItems
+        };
+        
+        setShipments([...shipments, newShipment]);
+        setShowForm(false);
+        setItems([{...emptyItem}]);
+        setInvoiceId('');
+        setValidationErrors({});
+        setShowSuccess(true);
+
+        for (let i = 0; i < items.length; i++) {
+          localStorage.removeItem(`shipment_${invoiceId}_${i}`);
+        }
+
+        setTimeout(() => {
+          setShowSuccess(false);
+        }, 3000);
+      } catch (error) {
+        setErrorMessage('Failed to save shipment. Please try again.');
+        setTimeout(() => {
+          setErrorMessage(null);
+        }, 3000);
+      } finally {
+        setIsSubmitting(false);
       }
-
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setShowSuccess(false);
-      }, 3000);
     }
   };
 
@@ -240,6 +248,12 @@ const ShipmentPage = () => {
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-out">
           Successfully added shipment
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-out">
+          {errorMessage}
         </div>
       )}
 
@@ -422,9 +436,12 @@ const ShipmentPage = () => {
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Save Shipment
+                  {isSubmitting ? 'Saving...' : 'Save Shipment'}
                 </button>
               </div>
             </div>
