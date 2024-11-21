@@ -79,13 +79,13 @@ exports.additemtoShipments = async (req, res) => {
 
             // Add to inventory
             try {
-                const itemsResponse = await axios.post(`http://localhost:3500/api/items/additems`, items_data);
-                items_message = "Item successfully added.";
-                console.log(items_message);
+                const itemsResponse = await axios.post(`http://localhost:3500/api/inventory/addinventory`, inventory_data);
+                inventory_message = "Item successfully added to inventory.";
+                console.log(inventory_message);
             } catch(err) {
                 if(err.response && err.response.status === 400) {
-                    items_message = `${item} already exists in items`;
-                    console.log(items_message);
+                    inventory_message = `${item} already exists in inventory`;
+                    console.log(inventory_message);
                 } else {
                     throw new Error("Error occurred while adding item to items: " + err.message);
                 }
