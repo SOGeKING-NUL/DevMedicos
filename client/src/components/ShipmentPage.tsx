@@ -106,9 +106,9 @@ const ShipmentPage = () => {
     
     if (field === 'quantity' || field === 'bonus' || field === 'rate') {
       const quantity = parseInt(newItems[index].quantity) || 0;
-      const bonus = parseInt(newItems[index].bonus) || 0;
+      // const bonus = parseInt(newItems[index].bonus) || 0;
       const rate = parseFloat(newItems[index].rate) || 0;
-      newItems[index].amount = rate * (bonus + quantity);
+      newItems[index].amount = rate * (quantity);
     }
     
     setItems(newItems);

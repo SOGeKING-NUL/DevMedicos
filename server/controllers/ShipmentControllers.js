@@ -148,3 +148,52 @@ exports.getShipments= async(req,res)=>{
         
     };
 };
+
+exports.item_count= async(req,res)=>{
+
+    try{
+        const {invoice_no}= req.body;
+
+        if(!invoice_no || typeof invoice_no !== 'string'){return res.json({error: "invoice number not provided"})}
+
+        const query= "SELECT COUNT(*) AS item_count FROM SHIPMENT WHERE invoice_no= ?";
+        const result= await getQuery(query,[invoice_no]);
+        console.log(` invoice number ${invoice_no} has ${result.item_count} items`);
+        return res.json({message: "item_count: " + result.item_count});
+
+    }catch(err){
+        console.log("error while fetching no of items: " + err.message);
+        return res.status(500).json({error: "error while fetching no of items: " + err.message});
+
+    };
+};
+
+exports.shipment_amount= async(req,res)=>{
+    try{
+
+        const {invoice_no}= req.body;
+
+        if(!invoice_no || typeof invoice_no !== 'string'){return res.status(500).json({error: "invoice_no is empty or incorrect"})}
+
+        const query= "SELECT SUM(amount) AS shipment_sum FROM shipment WHERE invoice_no =?";
+        const result= await getQuery(query, [invoice_no]);
+        console.log(`shipment amount for ${invoice_no} is ${result.shipment_sum}`);
+        return res.status(500).json({sum: result.shipment_sum});
+
+    }catch(err){
+        console.log("error while fetching sum:" + err.message)
+        return res.status(500).json("error while fetching sum:" + err.message)
+    };
+};
+
+exports.invoice_number= async(req,res)=>{
+    try{
+        const query= "SELECT DISTINCT invoice_no FROM shipment";
+        const result= await allQuery(query, []);
+        console.log("all invoice numbers fetched");
+        res.json(result) 
+    }catch(err){
+        console.log("error while getting shipment invoice numbers: " +err.message);
+        return res.json({error: "error while getting shipment invoice numbers: " +err.message});
+    };
+};
