@@ -131,10 +131,20 @@ exports.additemtoShipments = async (req, res) => {
     return res.status(200).json(results);
 };
 
-exports.getShipments= async(req,res)=>{
+exports.getShipment= async(req,res)=>{
     try{
-        const query= `SELECT * FROM SHIPMENT`;
-        const shipment_rows= await allQuery(query,[])
+        const{invoice_no} = req.body;
+
+        if(!invoice_no || typeof invoice_no!== 'string'){return res.status(400).json({error: "invoice number missing/wrong"})};
+
+        const query= `SELECT item, quantity, bonus, pack_of, mrp, rate, amount FROM shipment WHERE invoice_no=?`;
+        const shipment_rows= await allQuery(query,[invoice_no]);
+
+        if (shipment_rows.length === 0) {
+            return res.status(404).json({ message: "No shipments found for the given invoice number" });
+        }
+
+        console.log(`Fetched ${shipment_rows.length} rows for invoice_no: ${invoice_no}`);
         return res.status(200).json({
             shipment_rows
         });
@@ -148,6 +158,8 @@ exports.getShipments= async(req,res)=>{
         
     };
 };
+
+
 
 exports.item_count= async(req,res)=>{
 
@@ -188,12 +200,38 @@ exports.shipment_amount= async(req,res)=>{
 
 exports.invoice_number= async(req,res)=>{
     try{
+
         const query= "SELECT DISTINCT invoice_no FROM shipment";
         const result= await allQuery(query, []);
         console.log("all invoice numbers fetched");
-        res.json(result) 
+        const invoice_numbers= result.map(row=> row.invoice_no);
+        return res.json(invoice_numbers);// will return a list of invoice_numbers
+    
     }catch(err){
         console.log("error while getting shipment invoice numbers: " +err.message);
         return res.json({error: "error while getting shipment invoice numbers: " +err.message});
+    };
+};
+
+exports.shipment_date= async(req,res)=>{
+    try{
+
+        const {invoice_no}= req.body;
+
+        if (!invoice_no || typeof invoice_no !== 'string') {
+            return res.status(400).json({ error: "Invalid or missing invoice_no" });
+        }
+
+        const query=" SELECT created_on FROM shipment WHERE invoice_no= ?";
+        const result= await getQuery(query, [invoice_no]);
+
+        if(!result){return res.status(404).json({error: `no shipment found with invoice number ${invoice_no}`})};
+
+        console.log("created date successfully fetched");
+        return res.json({created_on: result.created_on});
+
+    }catch(err){
+        console.log("error when fetching date" + err.message);
+        return res.status(500).json("error when fetching date" + err.message);
     };
 };
