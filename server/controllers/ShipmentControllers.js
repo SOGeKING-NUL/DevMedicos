@@ -159,8 +159,6 @@ exports.getShipment= async(req,res)=>{
     };
 };
 
-
-
 exports.item_count= async(req,res)=>{
 
     try{
@@ -201,7 +199,7 @@ exports.shipment_amount= async(req,res)=>{
 exports.invoice_number= async(req,res)=>{
     try{
 
-        const query= "SELECT DISTINCT invoice_no FROM shipment";
+        const query= "SELECT DISTINCT invoice_no FROM shipment ORDER BY created_on DESC";
         const result= await allQuery(query, []);
         console.log("all invoice numbers fetched");
         const invoice_numbers= result.map(row=> row.invoice_no);
@@ -235,3 +233,7 @@ exports.shipment_date= async(req,res)=>{
         return res.status(500).json("error when fetching date" + err.message);
     };
 };
+
+exports.on_shipment_loading= async(req,res)=>{
+
+}
