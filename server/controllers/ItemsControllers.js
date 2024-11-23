@@ -22,15 +22,26 @@ exports.additemtoItems= async(req,res)=>{
         } 
         
         else {
-          console.log(`${item} already exists in items`);
-          res.status(400).json({message: `${item} already exists in items`});
-
-        }
+          // If item exists, update the MRP
+          await exports.updatemrp(item, mrp_per_unit);
+          return res.status(200).json({ message: `MRP for ${item} successfully updated to ${mrp_per_unit}` });
+      }
       } catch (err) {
         console.error("Error while adding item to items:", err.message);
         res.status(500).json({error : err.message});
 
       }
+};
+
+exports.updatemrp = async (item, newMRP) => {
+  try {
+      const query = "UPDATE items SET mrp_per_unit = ? WHERE item = ?";
+      await runQuery(query, [parseFloat(newMRP), item]);
+      console.log(`MRP for ${item} successfully updated to ${newMRP}`);
+  } catch (err) {
+      console.error("Error while updating MRP:", err.message);
+      throw new Error("Failed to update MRP");
+  }
 };
 
 exports.showiteminItems= async(req,res)=>{

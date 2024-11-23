@@ -133,7 +133,7 @@ exports.additemtoShipments = async (req, res) => {
 
 exports.getShipment= async(req,res)=>{
     try{
-        const{invoice_no} = req.body;
+        const{invoice_no} = req.query;
 
         if(!invoice_no || typeof invoice_no!== 'string'){return res.status(400).json({error: "invoice number missing/wrong"})};
 
@@ -162,14 +162,14 @@ exports.getShipment= async(req,res)=>{
 exports.item_count= async(req,res)=>{
 
     try{
-        const {invoice_no}= req.body;
+        const {invoice_no}= req.query;
 
         if(!invoice_no || typeof invoice_no !== 'string'){return res.json({error: "invoice number not provided"})}
 
         const query= "SELECT COUNT(*) AS item_count FROM SHIPMENT WHERE invoice_no= ?";
         const result= await getQuery(query,[invoice_no]);
         console.log(` invoice number ${invoice_no} has ${result.item_count} items`);
-        return res.json({message: "item_count: " + result.item_count});
+        return res.json({item_count: result.item_count});
 
     }catch(err){
         console.log("error while fetching no of items: " + err.message);
@@ -181,14 +181,14 @@ exports.item_count= async(req,res)=>{
 exports.shipment_amount= async(req,res)=>{
     try{
 
-        const {invoice_no}= req.body;
+        const {invoice_no}= req.query;
 
         if(!invoice_no || typeof invoice_no !== 'string'){return res.status(500).json({error: "invoice_no is empty or incorrect"})}
 
         const query= "SELECT SUM(amount) AS shipment_sum FROM shipment WHERE invoice_no =?";
         const result= await getQuery(query, [invoice_no]);
         console.log(`shipment amount for ${invoice_no} is ${result.shipment_sum}`);
-        return res.status(500).json({sum: result.shipment_sum});
+        return res.json({sum: result.shipment_sum});
 
     }catch(err){
         console.log("error while fetching sum:" + err.message)
@@ -214,7 +214,7 @@ exports.invoice_number= async(req,res)=>{
 exports.shipment_date= async(req,res)=>{
     try{
 
-        const {invoice_no}= req.body;
+        const {invoice_no}= req.query;
 
         if (!invoice_no || typeof invoice_no !== 'string') {
             return res.status(400).json({ error: "Invalid or missing invoice_no" });
@@ -223,7 +223,7 @@ exports.shipment_date= async(req,res)=>{
         const query=" SELECT created_on FROM shipment WHERE invoice_no= ?";
         const result= await getQuery(query, [invoice_no]);
 
-        if(!result){return res.status(404).json({error: `no shipment found with invoice number ${invoice_no}`})};
+        if(!result|| result.length === 0){return res.status(404).json({error: `no shipment found with invoice number ${invoice_no}`})};
 
         console.log("created date successfully fetched");
         return res.json({created_on: result.created_on});
@@ -233,7 +233,3 @@ exports.shipment_date= async(req,res)=>{
         return res.status(500).json("error when fetching date" + err.message);
     };
 };
-
-exports.on_shipment_loading= async(req,res)=>{
-
-}
