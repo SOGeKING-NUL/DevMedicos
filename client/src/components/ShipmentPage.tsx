@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Plus, X, Search, Eye, Trash2 } from 'lucide-react';
-import { saveShipments, ShipmentData } from '../services/shipmentService';
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, X, Search, Eye, Trash2, RefreshCw } from 'lucide-react';
+import ShipmentPagination from './ShipmentPagination';
+import axios from 'axios';
+import { fetchShipmentDetails, ShipmentDetail } from './fetchShipmentDetails';
 
 interface ShipmentItem {
   itemName: string;
@@ -12,12 +14,22 @@ interface ShipmentItem {
   amount: number;
 }
 
+interface ShipmentDetailsItem {
+  item: string;
+  quantity: number;
+  bonus: number;
+  pack_of: number;
+  mrp: number;
+  rate: number;
+  amount: number;
+}
+
 interface Shipment {
   id: string;
   date: string;
-  totalAmount: number;
   invoiceId: string;
   items: ShipmentItem[];
+  totalAmount: number;
 }
 
 const emptyItem: ShipmentItem = {
@@ -38,18 +50,59 @@ const formatIndianCurrency = (number: number) => {
   }).format(number);
 };
 
+const ITEMS_PER_PAGE = 10;
+
 const ShipmentPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState<string | null>(null);
-  const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [items, setItems] = useState<ShipmentItem[]>([{...emptyItem}]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [shipmentDetails, setShipmentDetails] = useState<ShipmentDetail[]>([]);
+  const [items, setItems] = useState<ShipmentItem[]>([{...emptyItem}]);
   const [invoiceId, setInvoiceId] = useState('');
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedShipmentDetails, setSelectedShipmentDetails] = useState<ShipmentDetailsItem[] | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
   const inputRefs = useRef<{ [key: string]: HTMLInputElement }>({});
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const details = await fetchShipmentDetails();
+      setShipmentDetails(details);
+    } catch (err) {
+      setError('Failed to fetch shipment details. Please try again.');
+      console.error('Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchShipmentDetailsData = async (invoiceNo: string) => {
+    setIsLoadingDetails(true);
+    setDetailsError(null);
+    try {
+      const response = await axios.get('http://localhost:3500/api/shipments/getshipment', {
+        params: { invoice_no: invoiceNo }
+      });
+      setSelectedShipmentDetails(response.data);
+    } catch (err) {
+      setDetailsError('Failed to fetch shipment details. Please try again.');
+      console.error('Error fetching shipment details:', err);
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
 
   const validateField = (value: string) => value.trim() !== '';
 
@@ -106,34 +159,12 @@ const ShipmentPage = () => {
     
     if (field === 'quantity' || field === 'bonus' || field === 'rate') {
       const quantity = parseInt(newItems[index].quantity) || 0;
-      // const bonus = parseInt(newItems[index].bonus) || 0;
+      const bonus = parseInt(newItems[index].bonus) || 0;
       const rate = parseFloat(newItems[index].rate) || 0;
-      newItems[index].amount = rate * (quantity);
+      newItems[index].amount = rate * (bonus + quantity);
     }
     
     setItems(newItems);
-
-    if (invoiceId) {
-      const shipmentData: ShipmentData = {
-        invoice_no: invoiceId,
-        quantity: parseInt(newItems[index].quantity) || 0,
-        bonus: parseInt(newItems[index].bonus) || 0,
-        pack_of: parseInt(newItems[index].packOf) || 0,
-        item: newItems[index].itemName,
-        mrp: parseFloat(newItems[index].mrp) || 0,
-        rate: parseFloat(newItems[index].rate) || 0
-      };
-      localStorage.setItem(`shipment_${invoiceId}_${index}`, JSON.stringify(shipmentData));
-    }
-
-    if (index === items.length - 1 && 
-        validateField(newItems[index].itemName) &&
-        validateField(newItems[index].quantity) &&
-        validateField(newItems[index].packOf) &&
-        validateField(newItems[index].mrp) &&
-        validateField(newItems[index].rate)) {
-      addRow();
-    }
   };
 
   const deleteRow = (index: number) => {
@@ -141,10 +172,6 @@ const ShipmentPage = () => {
       const newItems = [...items];
       newItems.splice(index, 1);
       setItems(newItems);
-
-      if (invoiceId) {
-        localStorage.removeItem(`shipment_${invoiceId}_${index}`);
-      }
     }
   };
 
@@ -152,21 +179,27 @@ const ShipmentPage = () => {
     setItems([...items, {...emptyItem}]);
   };
 
-  const formatShipmentData = (validItems: ShipmentItem[]): ShipmentData[] => {
-    return validItems.map(item => ({
-      invoice_no: invoiceId,
-      quantity: parseInt(item.quantity) || 0,
-      bonus: parseInt(item.bonus) || 0,
-      pack_of: parseInt(item.packOf) || 0,
-      item: item.itemName,
-      mrp: parseFloat(item.mrp) || 0,
-      rate: parseFloat(item.rate) || 0
-    }));
+  const formatShipmentData = () => {
+    return items
+      .filter(item => 
+        validateField(item.itemName) &&
+        validateField(item.quantity) &&
+        validateField(item.packOf) &&
+        validateField(item.mrp) &&
+        validateField(item.rate)
+      )
+      .map(item => ({
+        invoice_no: invoiceId,
+        quantity: parseInt(item.quantity),
+        bonus: parseInt(item.bonus) || 0,
+        pack_of: parseInt(item.packOf),
+        item: item.itemName,
+        mrp: parseFloat(item.mrp),
+        rate: parseFloat(item.rate)
+      }));
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting) return;
-
     const errors: {[key: string]: boolean} = {};
     let hasError = false;
 
@@ -198,62 +231,88 @@ const ShipmentPage = () => {
 
     if (!hasError && validItems.length > 0) {
       setIsSubmitting(true);
-      setErrorMessage(null);
+      setError(null);
 
       try {
-        const shipmentData = formatShipmentData(validItems);
-        await saveShipments(shipmentData);
-
-        const totalAmount = validItems.reduce((sum, item) => sum + item.amount, 0);
-        const newShipment: Shipment = {
-          id: Date.now().toString(),
-          date: new Date().toISOString().split('T')[0],
-          totalAmount,
-          invoiceId,
-          items: validItems
-        };
+        const formattedData = formatShipmentData();
+        await axios.post('http://localhost:3500/api/shipments/addshipments', formattedData);
         
-        setShipments([...shipments, newShipment]);
         setShowForm(false);
         setItems([{...emptyItem}]);
         setInvoiceId('');
         setValidationErrors({});
         setShowSuccess(true);
-
-        for (let i = 0; i < items.length; i++) {
-          localStorage.removeItem(`shipment_${invoiceId}_${i}`);
-        }
+        
+        // Refresh the shipment list
+        await fetchData();
 
         setTimeout(() => {
           setShowSuccess(false);
         }, 3000);
-      } catch (error) {
-        setErrorMessage('Failed to save shipment. Please try again.');
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 3000);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred while saving the shipment');
+        console.error('Error saving shipment:', err);
       } finally {
         setIsSubmitting(false);
       }
     }
   };
 
-  const filteredShipments = shipments.filter(shipment => 
-    shipment.date.includes(searchTerm) || 
-    shipment.invoiceId.includes(searchTerm)
+  const handleViewDetails = async (invoiceNo: string) => {
+    setShowDetails(invoiceNo);
+    await fetchShipmentDetailsData(invoiceNo);
+  };
+
+  const filteredShipments = shipmentDetails.filter(shipment =>
+    shipment.date.includes(searchTerm) ||
+    shipment.invoiceId.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredShipments.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentShipments = filteredShipments.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  if (isLoading) {
+    return (
+      <main className="container mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="container mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex flex-col items-center justify-center h-64">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={fetchData}
+              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Retry</span>
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="container mx-auto px-4 py-8">
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-out">
           Successfully added shipment
-        </div>
-      )}
-
-      {errorMessage && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-out">
-          {errorMessage}
         </div>
       )}
 
@@ -275,7 +334,10 @@ const ShipmentPage = () => {
               type="text"
               placeholder="Search by Date or Invoice ID..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <Search className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
@@ -286,9 +348,7 @@ const ShipmentPage = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">
-                  New Shipment - {new Date().toLocaleDateString()}
-                </h3>
+                <h3 className="text-lg font-bold">New Shipment</h3>
                 <button onClick={() => setShowForm(false)}>
                   <X className="h-5 w-5" />
                 </button>
@@ -431,76 +491,28 @@ const ShipmentPage = () => {
                 <button
                   onClick={() => setShowForm(false)}
                   className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 ${
+                    isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
                   }`}
                 >
-                  {isSubmitting ? 'Saving...' : 'Save Shipment'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showDetails && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">
-                  Shipment Details - {new Date(shipments.find(s => s.id === showDetails)?.date || '').toLocaleDateString()}
-                </h3>
-                <button onClick={() => setShowDetails(null)}>
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700">
-                  Invoice ID: {shipments.find(s => s.id === showDetails)?.invoiceId}
-                </p>
-              </div>
-              
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bonus</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pack Of</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">MRP</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rate</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {shipments.find(s => s.id === showDetails)?.items.map((item, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-2">{item.itemName}</td>
-                        <td className="px-4 py-2">{item.quantity}</td>
-                        <td className="px-4 py-2">{item.bonus}</td>
-                        <td className="px-4 py-2">{item.packOf}</td>
-                        <td className="px-4 py-2">{formatIndianCurrency(parseFloat(item.mrp))}</td>
-                        <td className="px-4 py-2">{formatIndianCurrency(parseFloat(item.rate))}</td>
-                        <td className="px-4 py-2">{formatIndianCurrency(item.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setShowDetails(null)}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-                >
-                  Close
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Shipment</span>
+                  )}
                 </button>
               </div>
             </div>
@@ -519,17 +531,17 @@ const ShipmentPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredShipments.map((shipment) => (
+              {currentShipments.map((shipment) => (
                 <tr key={shipment.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {new Date(shipment.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{shipment.invoiceId}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatIndianCurrency(shipment.totalAmount)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{shipment.items.length}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{shipment.itemCount}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <button
-                      onClick={() => setShowDetails(shipment.id)}
+                      onClick={() => handleViewDetails(shipment.invoiceId)}
                       className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
                     >
                       <Eye className="h-4 w-4" />
@@ -541,6 +553,95 @@ const ShipmentPage = () => {
             </tbody>
           </table>
         </div>
+
+        {filteredShipments.length > ITEMS_PER_PAGE && (
+          <ShipmentPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
+
+        {showDetails && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Shipment Details</h3>
+                <button onClick={() => {
+                  setShowDetails(null);
+                  setSelectedShipmentDetails(null);
+                  setDetailsError(null);
+                }}>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {isLoadingDetails && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+
+              {detailsError && (
+                <div className="text-red-600 text-center py-4">{detailsError}</div>
+              )}
+
+              {selectedShipmentDetails && !isLoadingDetails && !detailsError && (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bonus</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pack Of</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">MRP</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rate</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {selectedShipmentDetails.map((item, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 text-sm">{item.item}</td>
+                            <td className="px-4 py-2 text-sm">{item.quantity}</td>
+                            <td className="px-4 py-2 text-sm">{item.bonus}</td>
+                            <td className="px-4 py-2 text-sm">{item.pack_of}</td>
+                            <td className="px-4 py-2 text-sm">{formatIndianCurrency(item.mrp)}</td>
+                            <td className="px-4 py-2 text-sm">{formatIndianCurrency(item.rate)}</td>
+                            <td className="px-4 py-2 text-sm">{formatIndianCurrency(item.amount)}</td>
+                          </tr>
+                        ))}
+                        <tr className="bg-gray-50 font-medium">
+                          <td colSpan={6} className="px-4 py-2 text-right">Total:</td>
+                          <td className="px-4 py-2">
+                            {formatIndianCurrency(
+                              selectedShipmentDetails.reduce((sum, item) => sum + item.amount, 0)
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={() => {
+                        setShowDetails(null);
+                        setSelectedShipmentDetails(null);
+                        setDetailsError(null);
+                      }}
+                      className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
