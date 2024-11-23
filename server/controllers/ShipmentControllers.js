@@ -36,7 +36,8 @@ exports.additemtoShipments = async (req, res) => {
         }
 
         try {
-            invoice_no = invoice_no.trim();
+            item= item.toLowerCase();
+            invoice_no = invoice_no.trim().toLowerCase();
             const total_quantity = quantity + (bonus || 0); // Handle null/undefined bonus
             const total_units = total_quantity * pack_of;
             const rate_per_unit = rate / pack_of;
@@ -145,9 +146,7 @@ exports.getShipment= async(req,res)=>{
         }
 
         console.log(`Fetched ${shipment_rows.length} rows for invoice_no: ${invoice_no}`);
-        return res.status(200).json({
-            shipment_rows
-        });
+        return res.status(200).json(shipment_rows);
 
     }catch(err){
         

@@ -3,7 +3,9 @@ const{generateID}= require("../utils/Generate_id.js")
 
 
 exports.additemtoItems= async(req,res)=>{
-    const {item, mrp_per_unit}= req.body;
+    let {item, mrp_per_unit}= req.body;
+    item = item.toLowerCase();
+
 
     try {
         // Check if the item already exists in the items table
@@ -58,34 +60,3 @@ exports.showiteminItems= async(req,res)=>{
 };
 
 
-
-
-
-
-
-
-
-//how to add data from frontend to additemtoInventory:
-    // document.getElementById('inventoryForm').addEventListener('submit', async (event) => {
-    //     event.preventDefault();
-
-    //     const invoice_no = document.getElementById('invoice_no').value;
-    //     const item = document.getElementById('item').value;
-    //     const total_units = document.getElementById('total_units').value;
-    //     const rate_per_unit = document.getElementById('rate_per_unit').value;
-
-    //     const data = {
-    //         invoice_no,
-    //         item,
-    //         total_units,
-    //         rate_per_unit
-    //     };
-
-    //     try {
-    //         const response = await axios.post('http://localhost:3500/item', data);
-
-    //         console.log('Successfully added to inventory:', response.data);
-    //     } catch (err) {
-    //         console.error('Error adding to inventory:', err.response ? err.response.data.error : err.message);
-    //     }
-    // });
