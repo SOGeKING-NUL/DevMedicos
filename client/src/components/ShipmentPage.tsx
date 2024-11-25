@@ -132,9 +132,18 @@ const ShipmentPage = () => {
         const currentFieldIndex = fieldOrder.indexOf(field);
 
         if (currentFieldIndex < fieldOrder.length - 1) {
+          // Move to next field in the same row
           const nextField = fieldOrder[currentFieldIndex + 1];
           inputRefs.current[`${nextField}-${index}`]?.focus();
-        } else if (index < items.length - 1) {
+        } else if (index === items.length - 1) {
+          // If we're at the last field of the last row, add a new row
+          addRow();
+          // Focus on the first field of the new row after a short delay
+          setTimeout(() => {
+            inputRefs.current[`itemName-${index + 1}`]?.focus();
+          }, 0);
+        } else {
+          // Move to first field of next row
           inputRefs.current[`itemName-${index + 1}`]?.focus();
         }
       }

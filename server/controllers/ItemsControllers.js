@@ -48,10 +48,11 @@ exports.updatemrp = async (item, newMRP) => {
 
 exports.showiteminItems= async(req,res)=>{
   
-  const query= "SELECT * FROM items";
+  const query= "SELECT item FROM items";
   try{
     const rows= await allQuery(query, []);
-    res.json({items: rows})
+    const itemNames= rows.map(rows=> rows.item)
+    res.json(itemNames)
 
   }catch(err){
     console.log("error fetching all the items");
