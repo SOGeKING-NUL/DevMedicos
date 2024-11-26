@@ -87,14 +87,14 @@ exports.update_inventory = async (req, res) => {
 
         await runQuery("COMMIT");
 
-        res.status(200).json({ message: "Items successfully billed and removed from inventory",
+        return res.status(200).json({ message: "Items successfully billed and removed from inventory",
             bill_no
         });
 
     } catch (error) {
         console.error("General error occurred while addin to inventory:", error.message);
         await runQuery("ROLLBACK");
-        res.status(500).json({ error: "General error occurred: " + error.message });
+        return res.status(500).json({ error: "General error occurred: " + error.message });
     }
 };
 

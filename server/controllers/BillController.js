@@ -20,13 +20,13 @@ exports.additemtoBill= async(req,res)=>{
         };
 
         console.log("added the items to bill_items");
-        res.json({message: "successfully added items to bill_items",
+        return res.json({message: "successfully added items to bill_items",
             bill_no
         });
 
     }catch(err){
         console.log("error while adding to bill_itemsv" + err.message);
-        res.status(500).json({error: "error while adding to bill_items: " + err.message});
+        return res.status(500).json({error: "error while adding to bill_items: " + err.message});
     };    
 };
 
@@ -55,20 +55,51 @@ exports.addBill= async(req,res)=>{
 
         await runQuery(insertBillQuery,[bill_no, discount , amount ]);
         console.log("Bill added successfully");
-        res.json({ message: "Bill added successfully", bill_no });
+        return res.json({ message: "Bill added successfully", bill_no });
 
 
     }catch(err){
         console.log("Err while adding bill: "+ err.message);
-        res.status(500).json({error: "error while adding bill" + err.message});
+        return res.status(500).json({error: "error while adding bill" + err.message});
     };
 };
 
 exports.getbills= async(req,res)=>{
-    try{}catch(error){
+
+    try{
+        const bill_noQuery= `SELECT bill_no FROM bill`;
+        const billNos= await allQuery(bill_noQuery, []);
+        console.log("bill_no"+ billNos.bill_no)
+
+        const bills=[];
+
+        for (const {bill_no} of billNos){
+            const billDetailsQuery= `SELECT created_on, amount FROM bill WHERE bill_no= ?`;
+            const billDetails= await getQuery(billDetailsQuery, [bill_no]);
+            console.log(billDetails)
+            const { created_on, amount } = billDetails;
+
+
+            const itemsQuery= `SELECT COUNT(*) AS item_count FROM bill_items WHERE bill_no = ?`;
+            const items= await getQuery(itemsQuery, [bill_no]);
+            const {item_count}= items;
+
+            bills.push({
+                created_on,
+                bill_no,                
+                item_count,
+                amount            
+            })
+        };
+
+        return res.json(bills);
+
+        
+    }catch(error){
         console.log("error while getting bills: "+ error.message);
-        res.status(500).json({error: "error while getting bills: "+ error.message});
+        return res.status(500).json({error: "error while getting bills: "+ error.message});
     }
 };
 
 
+// date, bill_no, items, amount, view details
