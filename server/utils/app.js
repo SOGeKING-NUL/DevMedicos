@@ -5,6 +5,8 @@ const itemRoutes= require("../routes/ItemsRoutes.js");
 const ShipmentRoutes= require("../routes/ShipmentRoutes.js");
 const InventoryRoutes= require("../routes/InventoryRoutes.js");
 const SearchRoutes = require('../routes/SearchRoutes.js');
+const BillRoutes = require('../routes/BillRoutes.js');
+
 const app = express();
 
 
@@ -25,6 +27,7 @@ app.use(cors());
 app.use("/api/items", itemRoutes);
 app.use('/api/inventory',InventoryRoutes);
 app.use('/api/shipments',ShipmentRoutes);
+app.use('/api/bill', BillRoutes);
 app.use('/api/search', SearchRoutes);
 
 

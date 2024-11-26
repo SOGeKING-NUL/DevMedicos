@@ -1,8 +1,8 @@
 const express= require("express");
+const { additemtoBill, addBill } = require("../controllers/BillController");
 router= express.Router();
-const {toBill}= require("../controllers/InventoryControllers.js");
 
-
-// router.post("/addbill", toBill );
+router.post("/additemtobill", additemtoBill);
+router.post("/addbill", addBill);
 
 module.exports= router;

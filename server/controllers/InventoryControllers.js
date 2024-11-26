@@ -1,6 +1,7 @@
 const {runQuery, allQuery}=require("../utils/connect_db.js");
 const{generateID}= require("../utils/Generate_id");
-const sqlite3 = require("sqlite3");
+const axios = require('axios');
+
 
 exports.additemtoInventory= async(req,res)=>{
     const {invoice_no, item, total_units, rate_per_unit}= req.body;
@@ -26,10 +27,13 @@ exports.additemtoInventory= async(req,res)=>{
 };
 
 exports.update_inventory = async (req, res) => {
-    const item_array = req.body; 
+    const item_array = req.body;
 
     try {
         await runQuery("BEGIN TRANSACTION");
+
+        let errorOccurred = false;
+        let insufficientItem = null;
 
         for (let { item, quantity } of item_array) {
             const getInventoryQuery = "SELECT id, units FROM inventory WHERE item = ? ORDER BY created_on ASC, id ASC";
@@ -55,23 +59,42 @@ exports.update_inventory = async (req, res) => {
             }
 
             if (remainingQuantity > 0) {
-                await runQuery("ROLLBACK");
-                return res.status(400).json({ 
-                    error: `Not enough items in inventory to fulfill the bill for ${item}`,
-                    insufficientItem: item 
-                });
+                errorOccurred = true;
+                insufficientItem = item;
+                break;
             }
+        }
+
+        if (errorOccurred) {
+            await runQuery("ROLLBACK");
+            return res.status(400).json({
+                error: `Not enough items in inventory to fulfill the bill for ${insufficientItem}`,
+                insufficientItem: insufficientItem
+            });
+        }
+
+        let bill_no;
+        
+        try {
+            const response = await axios.post('http://localhost:3500/api/bill/additemtobill', item_array);
+            bill_no= response.data.bill_no;
+            console.log('Items added to bill:', response.data.message);
+        } catch (axiosError) {
+            console.error("Error while adding items to the bill:", axiosError.message);
+            await runQuery("ROLLBACK");
+            return res.status(500).json({ error: "Failed to add items to the bill: " + axiosError.message });
         }
 
         await runQuery("COMMIT");
 
-        res.status(200).json({ message: "Items successfully billed and removed from inventory" });
+        res.status(200).json({ message: "Items successfully billed and removed from inventory",
+            bill_no
+        });
 
     } catch (error) {
-        console.error("General error occurred:", error.message);
+        console.error("General error occurred while addin to inventory:", error.message);
         await runQuery("ROLLBACK");
         res.status(500).json({ error: "General error occurred: " + error.message });
     }
 };
-
 
