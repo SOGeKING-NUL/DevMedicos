@@ -26,43 +26,43 @@ exports.additemtoInventory= async(req,res)=>{
 };
 
 exports.update_inventory = async (req, res) => {
-    const { item, quantity } = req.body;
-    const db = new sqlite3.Database('../models/DevMedicos.db');
+    const item_array = req.body; 
 
     try {
-        // Start transaction
         await runQuery("BEGIN TRANSACTION");
 
-        const getInventoryQuery = "SELECT id, units FROM inventory WHERE item = ? ORDER BY created_on ASC, id ASC";
-        const updateInventoryQuery = "UPDATE inventory SET units = ? WHERE id = ?";
-        const deleteInventoryQuery = "DELETE FROM inventory WHERE id = ?";
+        for (let { item, quantity } of item_array) {
+            const getInventoryQuery = "SELECT id, units FROM inventory WHERE item = ? ORDER BY created_on ASC, id ASC";
+            const updateInventoryQuery = "UPDATE inventory SET units = ? WHERE id = ?";
+            const deleteInventoryQuery = "DELETE FROM inventory WHERE id = ?";
 
-        // Fetch inventory items
-        const rows = await allQuery(getInventoryQuery, [item]);
+            const rows = await allQuery(getInventoryQuery, [item]);
 
-        let remainingQuantity = quantity;
+            let remainingQuantity = quantity;
 
-        for (let row of rows) {
-            if (remainingQuantity <= 0) break;
+            for (let row of rows) {
+                if (remainingQuantity <= 0) break;
 
-            const { id, units } = row;
+                const { id, units } = row;
 
-            if (units > remainingQuantity) {
-                await runQuery(updateInventoryQuery, [units - remainingQuantity, id]);
-                remainingQuantity = 0;
-            } else {
-                await runQuery(deleteInventoryQuery, [id]);
-                remainingQuantity -= units;
+                if (units > remainingQuantity) {
+                    await runQuery(updateInventoryQuery, [units - remainingQuantity, id]);
+                    remainingQuantity = 0;
+                } else {
+                    await runQuery(deleteInventoryQuery, [id]);
+                    remainingQuantity -= units;
+                }
+            }
+
+            if (remainingQuantity > 0) {
+                await runQuery("ROLLBACK");
+                return res.status(400).json({ 
+                    error: `Not enough items in inventory to fulfill the bill for ${item}`,
+                    insufficientItem: item 
+                });
             }
         }
 
-        // If remaining quantity is still > 0, rollback
-        if (remainingQuantity > 0) {
-            await runQuery("ROLLBACK");
-            return res.status(400).json({ error: "Not enough items in inventory to fulfill the bill" });
-        }
-
-        // Commit transaction
         await runQuery("COMMIT");
 
         res.status(200).json({ message: "Items successfully billed and removed from inventory" });
@@ -71,8 +71,6 @@ exports.update_inventory = async (req, res) => {
         console.error("General error occurred:", error.message);
         await runQuery("ROLLBACK");
         res.status(500).json({ error: "General error occurred: " + error.message });
-    } finally {
-        db.close();
     }
 };
 
