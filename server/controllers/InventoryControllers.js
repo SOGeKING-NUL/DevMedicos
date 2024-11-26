@@ -1,5 +1,6 @@
-const {runQuery}=require("../utils/connect_db.js");
+const {runQuery, allQuery}=require("../utils/connect_db.js");
 const{generateID}= require("../utils/Generate_id");
+const sqlite3 = require("sqlite3");
 
 exports.additemtoInventory= async(req,res)=>{
     const {invoice_no, item, total_units, rate_per_unit}= req.body;
@@ -24,69 +25,51 @@ exports.additemtoInventory= async(req,res)=>{
     };
 };
 
-exports.toBill = async (req, res) => {
+exports.update_inventory = async (req, res) => {
     const { item, quantity } = req.body;
-
-    const db = new sqlite3.Database('./data/DevMedicos.db');
+    const db = new sqlite3.Database('../models/DevMedicos.db');
 
     try {
-        db.serialize(() => {
-            db.run("BEGIN TRANSACTION");
+        // Start transaction
+        await runQuery("BEGIN TRANSACTION");
 
-            const getInventoryQuery = "SELECT id, units FROM inventory WHERE item = ? ORDER BY created_on ASC, id ASC";
-            const updateInventoryQuery = "UPDATE inventory SET units = ? WHERE id = ?";
-            const deleteInventoryQuery = "DELETE FROM inventory WHERE id = ?";
+        const getInventoryQuery = "SELECT id, units FROM inventory WHERE item = ? ORDER BY created_on ASC, id ASC";
+        const updateInventoryQuery = "UPDATE inventory SET units = ? WHERE id = ?";
+        const deleteInventoryQuery = "DELETE FROM inventory WHERE id = ?";
 
-            db.all(getInventoryQuery, [item], (err, rows) => {
-                if (err) {
-                    db.run("ROLLBACK");
-                    console.error("Error fetching inventory:", err.message);
-                    return res.status(500).json({ error: "Error fetching inventory: " + err.message });
-                }
+        // Fetch inventory items
+        const rows = await allQuery(getInventoryQuery, [item]);
 
-                let remainingQuantity = quantity;
-                for (let row of rows) {
-                    if (remainingQuantity <= 0) break;
+        let remainingQuantity = quantity;
 
-                    const { id, units } = row;
+        for (let row of rows) {
+            if (remainingQuantity <= 0) break;
 
-                    if (units > remainingQuantity) {
-                        db.run(updateInventoryQuery, [units - remainingQuantity, id], (err) => {
-                            if (err) {
-                                db.run("ROLLBACK");
-                                console.error("Error updating inventory:", err.message);
-                                return res.status(500).json({ error: "Error updating inventory: " + err.message });
-                            }
-                        });
-                        remainingQuantity = 0;
-                    } else {
-                        db.run(deleteInventoryQuery, [id], (err) => {
-                            if (err) {
-                                db.run("ROLLBACK");
-                                console.error("Error deleting inventory:", err.message);
-                                return res.status(500).json({ error: "Error deleting inventory: " + err.message });
-                            }
-                        });
-                        remainingQuantity -= units;
-                    }
-                }
+            const { id, units } = row;
 
-                if (remainingQuantity > 0) {
-                    db.run("ROLLBACK");
-                    return res.status(400).json({ error: "Not enough items in inventory to fulfill the bill" });
-                }
+            if (units > remainingQuantity) {
+                await runQuery(updateInventoryQuery, [units - remainingQuantity, id]);
+                remainingQuantity = 0;
+            } else {
+                await runQuery(deleteInventoryQuery, [id]);
+                remainingQuantity -= units;
+            }
+        }
 
-                db.run("COMMIT", (err) => {
-                    if (err) {
-                        console.error("Error committing transaction:", err.message);
-                        return res.status(500).json({ error: "Error committing transaction: " + err.message });
-                    }
-                    res.status(200).json({ message: "Items successfully billed and removed from inventory" });
-                });
-            });
-        });
+        // If remaining quantity is still > 0, rollback
+        if (remainingQuantity > 0) {
+            await runQuery("ROLLBACK");
+            return res.status(400).json({ error: "Not enough items in inventory to fulfill the bill" });
+        }
+
+        // Commit transaction
+        await runQuery("COMMIT");
+
+        res.status(200).json({ message: "Items successfully billed and removed from inventory" });
+
     } catch (error) {
         console.error("General error occurred:", error.message);
+        await runQuery("ROLLBACK");
         res.status(500).json({ error: "General error occurred: " + error.message });
     } finally {
         db.close();
