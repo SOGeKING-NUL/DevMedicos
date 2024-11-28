@@ -52,10 +52,31 @@ exports.showiteminItems= async(req,res)=>{
   try{
     const rows= await allQuery(query, []);
     const itemNames= rows.map(rows=> rows.item)
+
+    console.log("successfully fetched all items.")
     res.json(itemNames)
 
   }catch(err){
     console.log("error fetching all the items");
+    res.status(500).json({error: err.message});
+  }
+};
+
+exports.showmrpinItems= async(req,res)=>{
+
+    const {item}= req.query;
+
+    try{
+      const query= "SELECT mrp_per_unit FROM items where item=?";
+
+      const rows= await allQuery(query, [item]);
+      const mrp= rows.map(rows=> rows.mrp_per_unit)
+
+      console.log("successfully fetched mrp.")
+      res.json(mrp)
+
+  }catch(err){
+    console.log("error fetching mrp");
     res.status(500).json({error: err.message});
   }
 };
