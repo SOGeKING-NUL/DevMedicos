@@ -51,7 +51,7 @@ exports.addBill= async(req,res)=>{
         const amount = amount_response.total_amount - discount;
         console.log(amount);
 
-        const insertBillQuery= `INSERT INTO bill  (bill_no, discount, amount) VALUES (?, ?, ?)`;
+        const insertBillQuery= `INSERT INTO bill  (bill_no, discount, amount, created_on) VALUES (?,?, ?, datetime('now', 'localtime'))`;
 
         await runQuery(insertBillQuery,[bill_no, discount , amount ]);
         console.log("Bill added successfully");
@@ -101,5 +101,25 @@ exports.getbills= async(req,res)=>{
     }
 };
 
+exports.viewDetials= async(req,res)=>{
+    const {bill_no}= req.query;
 
-// date, bill_no, items, amount, view details
+    try{
+
+        const itemQuery= `SELECT item,quantity, mrp_per_unit, total_amount FROM bill_items WHERE bill_no=?`;
+        const discountQuery= `SELECT discount FROM bill where bill_no=?`;
+
+        const itemsResponse= await allQuery(itemQuery,[bill_no]);
+        const discountResponse= await getQuery(discountQuery, [bill_no]);
+
+        
+        return res.json({
+            items: itemsResponse,
+            discount: discountResponse.discount
+        });
+
+    }catch(error){
+        console.log("error while view bill details"+error.message);
+        return res.status(500).json({error: "error while fetching bill details"+ error.message})
+    };
+};

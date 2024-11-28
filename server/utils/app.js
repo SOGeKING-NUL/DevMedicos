@@ -6,6 +6,8 @@ const ShipmentRoutes= require("../routes/ShipmentRoutes.js");
 const InventoryRoutes= require("../routes/InventoryRoutes.js");
 const SearchRoutes = require('../routes/SearchRoutes.js');
 const BillRoutes = require('../routes/BillRoutes.js');
+const dotenv= require("dotenv");
+dotenv.config();
 
 const app = express();
 
