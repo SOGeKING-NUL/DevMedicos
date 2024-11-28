@@ -24,13 +24,13 @@ interface ShipmentDetailsItem {
   amount: number;
 }
 
-// interface Shipment {
-//   id: string;
-//   date: string;
-//   invoiceId: string;
-//   items: ShipmentItem[];
-//   totalAmount: number;
-// }
+interface Shipment {
+  id: string;
+  date: string;
+  invoiceId: string;
+  items: ShipmentItem[];
+  totalAmount: number;
+}
 
 const emptyItem: ShipmentItem = {
   itemName: '',
@@ -168,9 +168,9 @@ const ShipmentPage = () => {
     
     if (field === 'quantity' || field === 'bonus' || field === 'rate') {
       const quantity = parseInt(newItems[index].quantity) || 0;
-      // const bonus = parseInt(newItems[index].bonus) || 0;
+      const bonus = parseInt(newItems[index].bonus) || 0;
       const rate = parseFloat(newItems[index].rate) || 0;
-      newItems[index].amount = rate * quantity;
+      newItems[index].amount = rate * (bonus + quantity);
     }
     
     setItems(newItems);
