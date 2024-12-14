@@ -4,7 +4,9 @@ const axios = require('axios');
 
 
 exports.additemtoInventory= async(req,res)=>{
-    const {invoice_no, item, total_units, rate_per_unit}= req.body;
+    let {invoice_no, item, total_units, rate_per_unit}= req.body;
+    item = item.trim().toLowerCase();
+
 
     try{
         const query= "INSERT INTO inventory(id, invoice_no, item, units, rate_per_unit) VALUES(?, ?, ?, ?, ?)";

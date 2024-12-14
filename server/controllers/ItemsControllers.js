@@ -4,7 +4,7 @@ const{generateID}= require("../utils/Generate_id.js")
 
 exports.additemtoItems= async(req,res)=>{
     let {item, mrp_per_unit}= req.body;
-    item = item.toLowerCase();
+    item = item.trim().toLowerCase();
 
 
     try {

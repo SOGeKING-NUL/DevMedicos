@@ -3,6 +3,7 @@ import { Plus, X, Search, Eye, Trash2, RefreshCw } from 'lucide-react';
 import ShipmentPagination from './ShipmentPagination';
 import axios from 'axios';
 import { fetchShipmentDetails, ShipmentDetail } from './fetchShipmentDetails';
+import AutocompleteInput from './billing/AutocompleteInput';
 
 interface ShipmentItem {
   itemName: string;
@@ -24,13 +25,13 @@ interface ShipmentDetailsItem {
   amount: number;
 }
 
-// interface Shipment {
-//   id: string;
-//   date: string;
-//   invoiceId: string;
-//   items: ShipmentItem[];
-//   totalAmount: number;
-// }
+interface Shipment {
+  id: string;
+  date: string;
+  invoiceId: string;
+  items: ShipmentItem[];
+  totalAmount: number;
+}
 
 const emptyItem: ShipmentItem = {
   itemName: '',
@@ -150,7 +151,7 @@ const ShipmentPage = () => {
     }
   };
 
-  const handleItemChange = (index: number, field: keyof ShipmentItem, value: string) => {
+  const handleItemChange = (index: number, field: keyof ShipmentItem, value: string, mrp?: number) => {
     if (['quantity', 'bonus', 'packOf'].includes(field)) {
       if (value && !Number.isInteger(Number(value))) {
         return;
@@ -166,9 +167,14 @@ const ShipmentPage = () => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     
+    // If MRP is provided from autocomplete, update it
+    if (field === 'itemName' && mrp !== undefined) {
+      newItems[index].mrp = mrp.toString();
+    }
+    
     if (field === 'quantity' || field === 'bonus' || field === 'rate') {
       const quantity = parseInt(newItems[index].quantity) || 0;
-      // const bonus = parseInt(newItems[index].bonus) || 0;
+      const bonus = parseInt(newItems[index].bonus) || 0;
       const rate = parseFloat(newItems[index].rate) || 0;
       newItems[index].amount = rate * (quantity);
     }
@@ -401,15 +407,13 @@ const ShipmentPage = () => {
                     {items.map((item, index) => (
                       <tr key={index}>
                         <td className="px-4 py-2">
-                          <input
-                            type="text"
+                          <AutocompleteInput
                             value={item.itemName}
-                            onChange={(e) => handleItemChange(index, 'itemName', e.target.value)}
-                            ref={el => { if (el) inputRefs.current[`itemName-${index}`] = el }}
+                            onChange={(value, mrp) => handleItemChange(index, 'itemName', value, mrp)}
                             onKeyDown={(e) => handleKeyDown(index, 'itemName', e)}
-                            className={`w-full p-1 border rounded ${
-                              validationErrors[`itemName-${index}`] ? 'border-red-500 bg-red-50' : ''
-                            }`}
+                            error={validationErrors[`itemName-${index}`] ? 'Item name is required' : undefined}
+                            placeholder="Enter item name"
+                            inputRef={el => { if (el) inputRefs.current[`itemName-${index}`] = el }}
                           />
                         </td>
                         <td className="px-4 py-2">
