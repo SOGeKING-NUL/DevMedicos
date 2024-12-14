@@ -1,11 +1,11 @@
 const express = require('express');
 const cors = require('cors'); // Import the cors package
-const{connectDB,closeDB}= require("./connect_db.js");
-const itemRoutes= require("../routes/ItemsRoutes.js");
-const ShipmentRoutes= require("../routes/ShipmentRoutes.js");
-const InventoryRoutes= require("../routes/InventoryRoutes.js");
-const SearchRoutes = require('../routes/SearchRoutes.js');
-const BillRoutes = require('../routes/BillRoutes.js');
+const{connectDB,closeDB}= require("./utils/connect_db.js");
+const itemRoutes= require("./routes/ItemsRoutes.js");
+const ShipmentRoutes= require("./routes/ShipmentRoutes.js");
+const InventoryRoutes= require("./routes/InventoryRoutes.js");
+const SearchRoutes = require('./routes/SearchRoutes.js');
+const BillRoutes = require('./routes/BillRoutes.js');
 const dotenv= require("dotenv");
 dotenv.config();
 
