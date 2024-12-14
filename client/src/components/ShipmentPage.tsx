@@ -25,13 +25,13 @@ interface ShipmentDetailsItem {
   amount: number;
 }
 
-interface Shipment {
-  id: string;
-  date: string;
-  invoiceId: string;
-  items: ShipmentItem[];
-  totalAmount: number;
-}
+// interface Shipment {
+//   id: string;
+//   date: string;
+//   invoiceId: string;
+//   items: ShipmentItem[];
+//   totalAmount: number;
+// }
 
 const emptyItem: ShipmentItem = {
   itemName: '',
@@ -174,7 +174,7 @@ const ShipmentPage = () => {
     
     if (field === 'quantity' || field === 'bonus' || field === 'rate') {
       const quantity = parseInt(newItems[index].quantity) || 0;
-      const bonus = parseInt(newItems[index].bonus) || 0;
+      // const bonus = parseInt(newItems[index].bonus) || 0;
       const rate = parseFloat(newItems[index].rate) || 0;
       newItems[index].amount = rate * (quantity);
     }
@@ -413,7 +413,7 @@ const ShipmentPage = () => {
                             onKeyDown={(e) => handleKeyDown(index, 'itemName', e)}
                             error={validationErrors[`itemName-${index}`] ? 'Item name is required' : undefined}
                             placeholder="Enter item name"
-                            inputRef={el => { if (el) inputRefs.current[`itemName-${index}`] = el }}
+                            // inputRef={el => { if (el) inputRefs.current[`itemName-${index}`] = el }}
                           />
                         </td>
                         <td className="px-4 py-2">
