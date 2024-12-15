@@ -66,6 +66,8 @@ const ShipmentPage = () => {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [showConfirmationModal, setShowConfirmationModal] = useState(false); // Controls the confirmation modal visibility
+
   const [selectedShipmentDetails, setSelectedShipmentDetails] = useState<ShipmentDetailsItem[] | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ const ShipmentPage = () => {
       setIsLoadingDetails(false);
     }
   };
-
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const validateField = (value: string) => value.trim() !== '';
 
   const handleKeyDown = (index: number, field: keyof ShipmentItem, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -181,7 +183,15 @@ const ShipmentPage = () => {
     
     setItems(newItems);
   };
-
+  // const confirmSaveShipment = () => {
+  //   setShowConfirmationModal(false); // Close modal
+  //   setIsSubmitting(true); // Start loading spinner or disable button
+  //   handleSubmit(); // Call the existing save shipment function
+  // };
+  
+  // const cancelSaveShipment = () => {
+  //   setShowConfirmationModal(false); // Close the modal
+  // };
   const deleteRow = (index: number) => {
     if (items.length > 1) {
       const newItems = [...items];
@@ -222,7 +232,6 @@ const ShipmentPage = () => {
       errors['invoiceId'] = true;
       hasError = true;
     }
-
     const validItems = items.filter(item => {
       const isValid = validateField(item.itemName) &&
                      validateField(item.quantity) &&
@@ -300,6 +309,30 @@ const ShipmentPage = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         </div>
+        {/* {showConfirmationModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+      <div className="text-center">
+        <h3 className="text-lg font-bold">Are you sure you want to save this shipment?</h3>
+        <div className="mt-4 flex justify-center space-x-4">
+          <button
+            onClick={cancelSaveShipment}
+            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+          >
+            No
+          </button>
+          <button
+            onClick={confirmSaveShipment}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Yes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)} */}
+
       </main>
     );
   }
@@ -509,7 +542,7 @@ const ShipmentPage = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleSubmit}
+                  onClick={() => setShowConfirmationModal(true)}// Show the confirmation modal instead of directly saving
                   disabled={isSubmitting}
                   className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 ${
                     isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
@@ -655,6 +688,31 @@ const ShipmentPage = () => {
             </div>
           </div>
         )}
+        {showConfirmationModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+      <h3 className="text-lg font-bold mb-4">Confirm Save</h3>
+      <p className="text-gray-600 mb-6">Are you sure you want to save this shipment?</p>
+      <div className="flex justify-end space-x-4">
+        <button
+          onClick={() => setShowConfirmationModal(false)} // Close modal if "No" is clicked
+          className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          No
+        </button>
+        <button
+          onClick={() => {
+            setShowConfirmationModal(false); // Close modal
+            handleSubmit(); // Proceed to save shipment
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Yes
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </main>
   );
