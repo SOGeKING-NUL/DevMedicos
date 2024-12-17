@@ -1,11 +1,12 @@
 const sqlite = require('sqlite3').verbose();
 const util = require('util');
+const path = require('path');
 
 let db;
-
+const dbPath = path.resolve(__dirname, '../models/DevMedicos.db'); 
 async function connectDB() {
     try {
-        db = new sqlite.Database("../models/DevMedicos.db");
+        db = new sqlite.Database(dbPath);
         console.log("You are connected");
     } catch (err) {
         console.log("Error while connecting to DB:", err.message);
