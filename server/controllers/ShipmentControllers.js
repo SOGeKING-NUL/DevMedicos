@@ -2,6 +2,50 @@ const {runQuery, getQuery, allQuery}=require("../utils/connect_db.js");
 const {generateID}= require("../utils/Generate_id.js");
 const axios= require("axios");
 
+require('dotenv').config();
+const nodemailer = require('nodemailer');
+
+const GMAIL_USER = process.env.GMAIL_USER;
+const GMAIL_PASSWORD = process.env.GMAIL_PASSWORD;
+const EMAIL_RECEIVER = process.env.EMAIL_RECEIVER;
+
+const sendShipmentEmail = async (invoice_no) => {
+    try {
+        const query = `
+            SELECT COUNT(*) AS total_items, SUM(amount) AS total_amount 
+            FROM shipment 
+            WHERE invoice_no = ?`;
+
+        const result = await getQuery(query, [invoice_no]);
+
+        const total_items = result.total_items || 0;  // Ensure you're accessing the first row in case of array response
+        const total_amount = result.total_amount || 0;
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail', 
+            auth: {
+                user: GMAIL_USER, 
+                pass: GMAIL_PASSWORD, 
+            },
+        });
+
+        // Set up the email data
+        const mailOptions = {
+            from: GMAIL_USER, 
+            to: EMAIL_RECEIVER,
+            subject: `Shipment Added - Invoice ${invoice_no}`,
+            text: `New Shipment Added.\n\nInvoice No: ${invoice_no}\nTotal Items: ${total_items}\nTotal Amount: ${total_amount.toFixed(2)}`,
+        };
+
+        // Send the email
+        await transporter.sendMail(mailOptions);
+
+        console.log(`Email sent for invoice ${invoice_no}: ${total_items} items, Total amount: ${total_amount.toFixed(2)}`);
+    } catch (error) {
+        console.error(`Error sending email for invoice ${invoice_no}:`, error.message);
+    }
+};
+
 exports.additemtoShipments = async (req, res) => {
     const shipments = req.body;
 
@@ -110,6 +154,10 @@ exports.additemtoShipments = async (req, res) => {
                     parseFloat(amount),
                 ]);
                 results.success.push({ shipment, message: "Shipment invoice successfully inserted." });
+                console.log("shipment added successfully");
+
+                await sendShipmentEmail(invoice_no);
+
             } catch (err) {
                 if (err.message.includes("SQLITE_CONSTRAINT")) {
                     results.errors.push({
@@ -128,7 +176,6 @@ exports.additemtoShipments = async (req, res) => {
         }
     }
 
-    // Return the consolidated result
     return res.status(200).json(results);
 };
 
