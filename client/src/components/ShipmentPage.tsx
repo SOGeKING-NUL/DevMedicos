@@ -187,9 +187,15 @@ const ShipmentPage = () => {
         newItems[index].mrp = (packOf * originalMRP).toFixed(2);
     }
 
+    if (field === 'quantity' || field === 'bonus' || field === 'rate') {
+      const quantity = parseInt(newItems[index].quantity) || 0;
+      // const bonus = parseInt(newItems[index].bonus) || 0;
+      const rate = parseFloat(newItems[index].rate) || 0;
+      newItems[index].amount = rate * (quantity);
+    }
+    
     setItems(newItems);
-};
-
+  };
   // const confirmSaveShipment = () => {
   //   setShowConfirmationModal(false); // Close modal
   //   setIsSubmitting(true); // Start loading spinner or disable button
