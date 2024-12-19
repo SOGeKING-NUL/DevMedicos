@@ -13,7 +13,9 @@ interface ShipmentItem {
   mrp: string;
   rate: string;
   amount: number;
+  originalMRP?: string; // Optional property to store the original MRP
 }
+
 
 interface ShipmentDetailsItem {
   item: string;
@@ -154,35 +156,40 @@ const ShipmentPage = () => {
   };
 
   const handleItemChange = (index: number, field: keyof ShipmentItem, value: string, mrp?: number) => {
+    // Validate inputs for specific fields
     if (['quantity', 'bonus', 'packOf'].includes(field)) {
-      if (value && !Number.isInteger(Number(value))) {
-        return;
-      }
+        if (value && !Number.isInteger(Number(value))) {
+            return;
+        }
     }
-    
     if (['mrp', 'rate'].includes(field)) {
-      if (value && !/^\d*\.?\d*$/.test(value)) {
-        return;
-      }
+        if (value && !/^\d*\.?\d*$/.test(value)) {
+            return;
+        }
     }
 
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
-    
-    // If MRP is provided from autocomplete, update it
+
+    // If MRP is provided from autocomplete, store it as originalMRP
     if (field === 'itemName' && mrp !== undefined) {
-      newItems[index].mrp = mrp.toString();
+        newItems[index].originalMRP = mrp.toString(); // Store original MRP separately
     }
-    
-    if (field === 'quantity' || field === 'bonus' || field === 'rate') {
-      const quantity = parseInt(newItems[index].quantity) || 0;
-      // const bonus = parseInt(newItems[index].bonus) || 0;
-      const rate = parseFloat(newItems[index].rate) || 0;
-      newItems[index].amount = rate * (quantity);
+
+    // Update item based on the field being changed
+    newItems[index] = { ...newItems[index], [field]: value };
+
+    // Calculate and display the correct MRP
+    const packOf = parseInt(newItems[index].packOf) || 0; // Get 'packOf' as a number, default to 0
+    const originalMRP = parseFloat(newItems[index].originalMRP || '0'); // Use stored originalMRP or default to 0
+
+    if (field === 'packOf' || field === 'itemName') {
+        // Always calculate MRP as the product of packOf and originalMRP
+        newItems[index].mrp = (packOf * originalMRP).toFixed(2);
     }
-    
+
     setItems(newItems);
-  };
+};
+
   // const confirmSaveShipment = () => {
   //   setShowConfirmationModal(false); // Close modal
   //   setIsSubmitting(true); // Start loading spinner or disable button
