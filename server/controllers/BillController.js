@@ -123,3 +123,28 @@ exports.viewDetials= async(req,res)=>{
         return res.status(500).json({error: "error while fetching bill details"+ error.message})
     };
 };
+
+exports.addReturn = async (req, res) => {
+    let { item, units, rate_per_unit } = req.body;
+    item = item.trim().toLowerCase();
+
+    try {
+        const query = `
+            INSERT INTO bill_item_return (item, units, rate_per_unit)
+            VALUES (?, ?, ?)
+        `;
+
+        await runQuery(query, [item, parseInt(units), parseFloat(rate_per_unit)]);
+        console.log("Successfully added return item");
+        res.status(201).json({ message: "Successfully added return item" });
+
+    } catch (err) {
+        console.log("Error while adding return item", err.message);
+        if (err.code === "SQLITE_CONSTRAINT" && err.message.includes("UNIQUE")) {
+            return res.status(409).json({ error: "Duplicate return entry. This item already exists with the same details." });
+        }
+
+        // For other errors
+        res.status(400).json({ error: "Failed to add return item: " + err.message });
+    }
+};

@@ -1,21 +1,17 @@
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
-const { parse } = require('json2csv');
-
 const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const nodemailer = require('nodemailer');
+const xlsx = require('xlsx');
+
+const dbPath = path.join(__dirname, '..', 'models', 'DevMedicos.db');
+const currentDir = __dirname;
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_PASSWORD = process.env.GMAIL_PASSWORD;
 const EMAIL_RECEIVER = process.env.EMAIL_RECEIVER;
-
-console.log(GMAIL_USER, GMAIL_PASSWORD)
-
-const dbPath = path.join(__dirname, '..', 'models', 'DevMedicos.db');
-
-const currentDir = __dirname;
 
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
@@ -24,8 +20,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-
-let startDate, endDate
+let startDate, endDate;
 const latestDateQuery = `
     SELECT MAX(created_on) AS latest_date
     FROM bill
@@ -44,14 +39,10 @@ db.get(latestDateQuery, [], (err, row) => {
         return;
     }
 
-    // Get the most recent date
-    endDate = row.latest_date.split('T')[0]; // Format as YYYY-MM-DD
-
-    // Calculate the start date as 30 days before the most recent date
+    endDate = row.latest_date.split('T')[0];
     startDate = new Date(new Date(endDate) - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // SQL query to fetch bills from the last 30 days (or available data) and the number of items in each bill
-    const query = `
+    const billsQuery = `
         SELECT 
             b.id, 
             b.created_on, 
@@ -73,88 +64,114 @@ db.get(latestDateQuery, [], (err, row) => {
             b.created_on DESC;
     `;
 
-    // Create a valid filename without time (replace special characters like ":")
-    const safeStartDate = startDate.replace(/:/g, '-');
-    const safeEndDate = endDate.replace(/:/g, '-');
-    
-    // Path to save the CSV file in the same directory as the script with both start and end dates
-    const outputCsvPath = path.join(currentDir, `bills_${safeStartDate}_to_${safeEndDate}.csv`);
+    const billItemReturnQuery = `
+        SELECT 
+            strftime('%Y-%m-%d', created_on) AS created_on, 
+            item, 
+            units, 
+            rate_per_unit,
+            (units * rate_per_unit) AS total_amount
+        FROM 
+            bill_item_return
+    `;
 
-    // Execute the query and export to CSV
-    db.all(query, [], async(err, rows) => {
+    const outputExcelPath = path.join(
+        currentDir,
+        `bills_${startDate}_to_${endDate.replace(/:/g, '-')}.xlsx`
+    );
+
+    db.all(billsQuery, [], (err, bills) => {
         if (err) {
-            console.error('Error querying database:', err.message);
+            console.error('Error querying bills:', err.message);
             db.close();
             process.exit(1);
         }
 
-        if (rows.length === 0) {
+        if (bills.length === 0) {
             console.log('No bills found for the specified date range.');
             db.close();
             return;
         }
 
-        // Sum up the total amount
-        const totalAmount = rows.reduce((sum, row) => sum + parseFloat(row.amount), 0).toFixed(2);
-
-        // Add the total amount as the last row (for display in CSV)
-        rows.push({
+        const totalBillAmount = bills.reduce((sum, bill) => sum + parseFloat(bill.amount), 0).toFixed(2);
+        bills.push({
             id: 'Total',
             created_on: '',
             bill_no: '',
             items_count: '',
             discount: '',
-            amount: totalAmount
+            amount: totalBillAmount
         });
 
-        try {
-            // Convert rows to CSV format
-            const csv = parse(rows);
+        db.all(billItemReturnQuery, [], (err, billItemReturns) => {
+            if (err) {
+                console.error('Error querying bill item returns:', err.message);
+                db.close();
+                process.exit(1);
+            }
 
-            // Write the CSV data to a file
-            fs.writeFileSync(outputCsvPath, csv);
-            console.log(`Exported ${rows.length} bills to ${outputCsvPath}`);
-            console.log(`Total Amount: ₹${totalAmount}`);
+            const totalReturnAmount = billItemReturns.reduce(
+                (sum, item) => sum + parseFloat(item.total_amount),
+                0
+            ).toFixed(2);
 
-            // Send the email with the CSV file
-            console.log(process.env.GMAIL_USER, process.env.GMAIL_PASSWORD);
-            await sendEmail(outputCsvPath);
+            billItemReturns.push({
+                created_on: 'Total',
+                item: '',
+                units: '',
+                rate_per_unit: '',
+                total_amount: totalReturnAmount
+            });
 
-        } catch (csvError) {
-            console.error('Error generating CSV:', csvError.message);
-        } finally {
-            db.close();
-        }
+            const finalAmount = (totalBillAmount - totalReturnAmount).toFixed(2);
+
+            const workbook = xlsx.utils.book_new();
+
+            const billsSheet = xlsx.utils.json_to_sheet(bills);
+            xlsx.utils.sheet_add_aoa(billsSheet, [
+                [''],
+                ['Final Amount (Bill Amount - Returns)', finalAmount]
+            ], { origin: -1 });
+            xlsx.utils.book_append_sheet(workbook, billsSheet, 'Bills');
+
+            const returnsSheet = xlsx.utils.json_to_sheet(billItemReturns);
+            xlsx.utils.book_append_sheet(workbook, returnsSheet, 'Bill Item Returns');
+
+            xlsx.writeFile(workbook, outputExcelPath, { bookType: 'xlsx' });
+            console.log(`Exported data to ${outputExcelPath}`);
+
+            // Ensure file write is completed before sending email
+            setTimeout(() => {
+                sendEmail(outputExcelPath);
+            }, 1000); // Adding a delay of 1 second
+
+        });
     });
 });
 
-// Function to send email with the CSV file as attachment
-async function sendEmail(csvFilePath) {
+async function sendEmail(excelFilePath) {
+    const endDateFormatted = endDate.split(' ')[0];
 
-    const endDate_formatted= endDate.split(' ')[0];
-    // Create a transporter using the environment variables
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_PASSWORD,
+            user: GMAIL_USER,
+            pass: GMAIL_PASSWORD,
         },
     });
 
-    // Email options
     const mailOptions = {
-        from: process.env.GMAIL_USER, // sender address
-        to: process.env.EMAIL_RECEIVER, // recipient address
-        subject: `Bills Report - ${startDate} to ${endDate}`, // Subject line
-        html: `<p>Please find the attached CSV file containing the bills report from <strong>${startDate}</strong> to <strong>${endDate_formatted}</strong>.</p>`,
+        from: GMAIL_USER,
+        to: EMAIL_RECEIVER,
+        subject: `Bills Report - ${startDate} to ${endDate}`,
+        html: `<p>Please find the attached Excel file containing the bills report and returned items from <strong>${startDate}</strong> to <strong>${endDateFormatted}</strong>.</p>`,
         attachments: [
             {
-                path: csvFilePath, // Attach the CSV file
+                path: excelFilePath,
             },
         ],
     };
 
-    // Send email
     transporter.sendMail(mailOptions, (err, info) => {
         if (err) {
             console.error('Error sending email:', err.message);
@@ -163,4 +180,3 @@ async function sendEmail(csvFilePath) {
         }
     });
 }
-

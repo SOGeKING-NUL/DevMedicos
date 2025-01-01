@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 import BillingTableContainer from './billing/BillingTableContainer';
 import NewBillForm from './billing/NewBillForm';
+import ReturnItemForm from './billing/ReturnItemForm';
 
 const BillingPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewBillModal, setShowNewBillModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleBillSuccess = () => {
@@ -28,13 +30,22 @@ const BillingPage = () => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-900">Billing Management</h2>
-          <button
-            onClick={() => setShowNewBillModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" />
-            <span>New Bill</span>
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setShowNewBillModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Bill</span>
+            </button>
+            <button
+              onClick={() => setShowReturnModal(true)}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-red-700"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Return Item</span>
+            </button>
+          </div>
         </div>
 
         <div className="mb-6">
@@ -55,6 +66,13 @@ const BillingPage = () => {
         {showNewBillModal && (
           <NewBillForm
             onClose={() => setShowNewBillModal(false)}
+            onSuccess={handleBillSuccess}
+          />
+        )}
+
+        {showReturnModal && (
+          <ReturnItemForm
+            onClose={() => setShowReturnModal(false)}
             onSuccess={handleBillSuccess}
           />
         )}

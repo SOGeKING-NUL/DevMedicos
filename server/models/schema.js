@@ -35,21 +35,21 @@ const items = `
 const inventory = `
     CREATE TABLE IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY,
-        created_on DATE NOT NULL DEFAULT CURRENT_DATE,
+        created_on DATETIME DEFAULT CURRENT_TIMESTAMP,
         invoice_no TEXT NOT NULL,
         item TEXT NOT NULL,
         units INTEGER NOT NULL DEFAULT 0,
         rate_per_unit DECIMAL(7,2) NOT NULL CHECK (rate_per_unit >= 0),
         FOREIGN KEY(invoice_no) REFERENCES shipment(invoice_no),
         FOREIGN KEY(item) REFERENCES items(item),
-        UNIQUE(invoice_no, item, units, rate_per_unit)
+        UNIQUE(created_on, invoice_no, item, units, rate_per_unit)
     )`;
 
 const shipment = `
     CREATE TABLE IF NOT EXISTS shipment (
         id INTEGER PRIMARY KEY,
         invoice_no TEXT NOT NULL,
-        created_on DATE NOT NULL DEFAULT CURRENT_DATE,
+        created_on DATETIME DEFAULT CURRENT_TIMESTAMP,
         quantity INTEGER NOT NULL CHECK (quantity >= 0),
         bonus INTEGER CHECK (bonus >= 0),
         pack_of DECIMAL(5,2) NOT NULL CHECK (pack_of >= 0),
@@ -83,6 +83,17 @@ const bill_items=`CREATE TABLE IF NOT EXISTS bill_items(
         )`
 
 
+const bill_item_return = `
+CREATE TABLE IF NOT EXISTS bill_item_return (
+    id INTEGER PRIMARY KEY,
+    created_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+    item TEXT NOT NULL,
+    units INTEGER NOT NULL DEFAULT 0,
+    rate_per_unit DECIMAL(7,2) NOT NULL CHECK (rate_per_unit >= 0),
+    UNIQUE(created_on, item, units, rate_per_unit)
+)`;
+
+
 db.serialize(() => {        
     db.run(items, (err) => {
         if (err) {
@@ -114,6 +125,12 @@ db.serialize(() => {
         }
     });    
     
+    db.run(bill_item_return, (err) => {
+        if (err) {
+            console.error("Error creating bill_item_return table:", err.message);
+        }
+    });
+
     db.close((err) => {
         if (err) {
             console.error("Error closing database connection:", err.message);
