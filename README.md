@@ -28,4 +28,5 @@
 > Frontend: Typescript, Tauri, React.js
 
 > Backend: Node.js
+
 > Database: SQLite 
