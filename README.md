@@ -25,8 +25,7 @@
 
 # Technologies Used
 
-> Frontend: React.js - Modern, responsive web framework
+> Frontend: Typescript, Tauri, React.js
 
-> Backend: Node.js - Scalable server-side JavaScript runtime
-
-> Database: SQLite - Lightweight, embedded relational database system
+> Backend: Node.js
+> Database: SQLite 
