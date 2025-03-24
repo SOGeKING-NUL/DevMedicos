@@ -1,4 +1,9 @@
 # # DevMedicos
+
+
+https://github.com/user-attachments/assets/3400a2d6-0359-4e07-ba6c-54f502260fca
+
+
 # Overview
 
 > Advanced medical inventory management system optimizing pharmaceutical stock control, sales tracking, and comprehensive reporting. Successfully deployed in a pharmacy, providing robust digital infrastructure for medical retail operations.
